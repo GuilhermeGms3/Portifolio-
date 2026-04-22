@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,36 +12,160 @@ const HEADLINES = [
   "Automação, sistemas e software. Do início ao fim.",
 ];
 
-function RotatingHeadline() {
+/**
+ * Headline rendered as SVG <text> that draws itself stroke-by-stroke
+ * (gradient stroke), then fills with white. Exits by erasing.
+ */
+function DrawingHeadline() {
   const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setIdx((i) => (i + 1) % HEADLINES.length), 3500);
-    return () => clearInterval(id);
-  }, []);
+  const textRef = useRef<SVGTextElement>(null);
+  const wrapRef = useRef<SVGSVGElement>(null);
+  const fallbackRef = useRef<HTMLDivElement>(null);
+  const [supportsStroke, setSupportsStroke] = useState(true);
 
-  const variants = [
-    { initial: { x: -60, opacity: 0, filter: "blur(8px)" }, animate: { x: 0, opacity: 1, filter: "blur(0px)" }, exit: { x: 60, opacity: 0, filter: "blur(8px)" } },
-    { initial: { opacity: 0, filter: "blur(16px)", scale: 1.03 }, animate: { opacity: 1, filter: "blur(0px)", scale: 1 }, exit: { opacity: 0, filter: "blur(16px)", scale: 0.97 } },
-    { initial: { y: 30, opacity: 0 }, animate: { y: 0, opacity: 1 }, exit: { y: -30, opacity: 0 } },
-    { initial: { x: 60, opacity: 0, filter: "blur(8px)" }, animate: { x: 0, opacity: 1, filter: "blur(0px)" }, exit: { x: -60, opacity: 0, filter: "blur(8px)" } },
-  ];
-  const v = variants[idx % variants.length];
+  // Draw + fill + hold + erase, then advance idx
+  useEffect(() => {
+    const node = textRef.current;
+    if (!node) {
+      // fallback: simple fade after delay
+      const id = window.setTimeout(
+        () => setIdx((i) => (i + 1) % HEADLINES.length),
+        3500,
+      );
+      return () => window.clearTimeout(id);
+    }
+
+    let len = 0;
+    try {
+      len = (node as unknown as SVGGeometryElement).getComputedTextLength
+        ? node.getComputedTextLength() * 2.2 // approx stroke length
+        : 1200;
+    } catch {
+      setSupportsStroke(false);
+      const id = window.setTimeout(
+        () => setIdx((i) => (i + 1) % HEADLINES.length),
+        3500,
+      );
+      return () => window.clearTimeout(id);
+    }
+    if (!len || !isFinite(len)) {
+      setSupportsStroke(false);
+      const id = window.setTimeout(
+        () => setIdx((i) => (i + 1) % HEADLINES.length),
+        3500,
+      );
+      return () => window.clearTimeout(id);
+    }
+
+    node.style.strokeDasharray = String(len);
+    node.style.strokeDashoffset = String(len);
+    node.style.fillOpacity = "0";
+    node.style.strokeOpacity = "1";
+
+    const tl = gsap.timeline({
+      onComplete: () => setIdx((i) => (i + 1) % HEADLINES.length),
+    });
+    // 1. draw stroke
+    tl.to(node, {
+      strokeDashoffset: 0,
+      duration: 2.5,
+      ease: "power2.inOut",
+    });
+    // 2. fill in white, fade stroke out
+    tl.to(
+      node,
+      { fillOpacity: 1, duration: 0.6, ease: "power2.out" },
+      ">-0.05",
+    );
+    tl.to(
+      node,
+      { strokeOpacity: 0, duration: 0.6, ease: "power2.out" },
+      "<",
+    );
+    // 3. hold visible
+    tl.to({}, { duration: 2.5 });
+    // 4. erase: stroke comes back, fill fades out
+    tl.to(node, { strokeOpacity: 1, duration: 0.2 }, ">");
+    tl.to(
+      node,
+      { fillOpacity: 0, duration: 1.0, ease: "power2.in" },
+      "<",
+    );
+    tl.to(
+      node,
+      { strokeDashoffset: len, duration: 1.2, ease: "power2.in" },
+      "<",
+    );
+
+    return () => {
+      tl.kill();
+    };
+  }, [idx]);
+
+  // Fallback DOM reveal (char-by-char) if SVG stroke unsupported
+  useEffect(() => {
+    if (supportsStroke) return;
+    const el = fallbackRef.current;
+    if (!el) return;
+    const chars = el.querySelectorAll<HTMLElement>("[data-c]");
+    gsap.fromTo(
+      chars,
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.4, stagger: 0.04, ease: "power2.out" },
+    );
+  }, [idx, supportsStroke]);
+
+  if (!supportsStroke) {
+    return (
+      <div
+        ref={fallbackRef}
+        className="font-display font-semibold tracking-tight text-white"
+        style={{ fontSize: "clamp(1.6rem, 4vw, 4rem)", lineHeight: 1.15 }}
+      >
+        {HEADLINES[idx].split("").map((c, i) => (
+          <span key={i} data-c className="inline-block">
+            {c === " " ? "\u00A0" : c}
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="relative h-[3em] md:h-[2.4em] overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.h1
-          key={idx}
-          initial={v.initial}
-          animate={v.animate}
-          exit={v.exit}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display font-semibold text-3xl md:text-5xl lg:text-6xl leading-[1.1] tracking-tight text-white"
-        >
-          {HEADLINES[idx]}
-        </motion.h1>
-      </AnimatePresence>
-    </div>
+    <svg
+      ref={wrapRef}
+      viewBox="0 0 1200 130"
+      preserveAspectRatio="xMinYMid meet"
+      className="w-full block"
+      style={{ height: "clamp(3.2rem, 8vw, 9rem)", overflow: "visible" }}
+      aria-label={HEADLINES[idx]}
+    >
+      <defs>
+        <linearGradient id="headline-stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#1A6EFF" />
+          <stop offset="100%" stopColor="#00FF41" />
+        </linearGradient>
+      </defs>
+      <text
+        ref={textRef}
+        key={idx}
+        x="0"
+        y="86"
+        fontFamily="Space Grotesk, system-ui, sans-serif"
+        fontWeight={700}
+        fontSize="74"
+        letterSpacing="-2"
+        fill="#ffffff"
+        stroke="url(#headline-stroke)"
+        strokeWidth={1.4}
+        style={{
+          willChange: "stroke-dashoffset, fill-opacity",
+          fillOpacity: 0,
+        }}
+      >
+        {HEADLINES[idx]}
+      </text>
+    </svg>
   );
 }
 
@@ -59,11 +183,7 @@ export function HeroSection() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.fromTo(
-        gridRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 1 },
-      )
+      tl.fromTo(gridRef.current, { opacity: 0 }, { opacity: 1, duration: 1 })
         .fromTo(
           lineRef.current,
           { width: "0%" },
@@ -111,13 +231,17 @@ export function HeroSection() {
         trigger: sectionRef.current,
         start: "top top",
         end: "bottom top",
-        scrub: 3,
+        scrub: 8,
       };
       gsap.to(gridRef.current, { y: 80, ease: "none", scrollTrigger: trig });
       gsap.to(headlineRef.current, { y: 320, ease: "none", scrollTrigger: trig });
       gsap.to(subRef.current, { y: 440, ease: "none", scrollTrigger: trig });
       gsap.to(ctasRef.current, { y: 520, ease: "none", scrollTrigger: trig });
-      gsap.to(indicatorRef.current, { opacity: 0, ease: "none", scrollTrigger: { ...trig, end: "10% top" } });
+      gsap.to(indicatorRef.current, {
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: { ...trig, end: "10% top" },
+      });
     }, sectionRef);
     return () => ctx.revert();
   }, []);
@@ -159,8 +283,19 @@ export function HeroSection() {
           GUILHERME AIRES — NOC / DEVOPS / DEV
         </div>
 
-        <div ref={headlineRef} className="mb-8" style={{ willChange: "transform" }}>
-          <RotatingHeadline />
+        {/* Headline wrapper: NO overflow:hidden, generous min-height to avoid layout shift */}
+        <div
+          ref={headlineRef}
+          className="mb-10 w-full"
+          style={{
+            willChange: "transform",
+            overflow: "visible",
+            minHeight: "clamp(3.4rem, 9vw, 10rem)",
+            wordBreak: "break-word",
+            whiteSpace: "normal",
+          }}
+        >
+          <DrawingHeadline />
         </div>
 
         <p
