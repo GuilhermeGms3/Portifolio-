@@ -1,116 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, AnimatePresence } from "framer-motion";
 
-const BOOT_LINES = [
-  "Initializing system...",
-  "Loading kernel modules...",
-  "Mounting filesystems...",
-  "Starting network services...",
-  "Connecting to NOC infrastructure",
-  "Loading developer environment...",
-  "Welcome, Guilherme Aires_",
-];
+gsap.registerPlugin(ScrollTrigger);
 
 const HEADLINES = [
+  "Infraestrutura sólida. Código que entrega.",
   "NOC Analyst. DevOps Engineer. Developer.",
-  "Infraestrutura que não dorme. Código que não falha.",
-  "Do terminal à produção — eu cuido do caminho.",
-  "Monitoramento, automação e desenvolvimento full stack.",
+  "Do monitoramento à produção — eu cuido do caminho.",
+  "Automação, sistemas e software. Do início ao fim.",
 ];
-
-function LiveClock() {
-  const [time, setTime] = useState("--:--:--");
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      setTime(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <div className="font-terminal text-xs md:text-sm text-terminal/70 tracking-widest">
-      SYS_TIME: <span className="text-terminal glow-text">{time}</span>
-    </div>
-  );
-}
-
-function BootSequence({ onDone }: { onDone: () => void }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [visibleLines, setVisibleLines] = useState<number>(0);
-  const [typedChars, setTypedChars] = useState<number>(0);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-      // Flicker
-      tl.to(containerRef.current, { opacity: 0, duration: 0.05 })
-        .to(containerRef.current, { opacity: 1, duration: 0.05 })
-        .to(containerRef.current, { opacity: 0, duration: 0.05 })
-        .to(containerRef.current, { opacity: 1, duration: 0.1 });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
-
-  useEffect(() => {
-    if (visibleLines >= BOOT_LINES.length) return;
-    const line = BOOT_LINES[visibleLines];
-    if (typedChars < line.length) {
-      const t = setTimeout(() => setTypedChars((c) => c + 1), 18);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => {
-      setVisibleLines((v) => v + 1);
-      setTypedChars(0);
-    }, 120);
-    return () => clearTimeout(t);
-  }, [typedChars, visibleLines]);
-
-  useEffect(() => {
-    if (visibleLines >= BOOT_LINES.length) {
-      const t = setTimeout(() => {
-        gsap.to(containerRef.current, {
-          opacity: 0,
-          y: -40,
-          filter: "blur(12px)",
-          duration: 0.8,
-          ease: "power2.in",
-          onComplete: onDone,
-        });
-      }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [visibleLines, onDone]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0 z-20 flex items-start justify-start p-6 md:p-12 font-terminal text-sm md:text-base text-terminal"
-    >
-      <div className="space-y-1">
-        {BOOT_LINES.slice(0, visibleLines).map((line, i) => (
-          <div key={i} className="flex gap-3 glow-text">
-            <span className="text-terminal/60">&gt;</span>
-            <span>{line}</span>
-            <span className="text-terminal-bright ml-2">[OK]</span>
-          </div>
-        ))}
-        {visibleLines < BOOT_LINES.length && (
-          <div className="flex gap-3 glow-text">
-            <span className="text-terminal/60">&gt;</span>
-            <span>
-              {BOOT_LINES[visibleLines].slice(0, typedChars)}
-              <span className="inline-block w-2 h-4 bg-terminal align-middle animate-pulse" />
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function RotatingHeadline() {
   const [idx, setIdx] = useState(0);
@@ -121,14 +21,14 @@ function RotatingHeadline() {
 
   const variants = [
     { initial: { x: -60, opacity: 0, filter: "blur(8px)" }, animate: { x: 0, opacity: 1, filter: "blur(0px)" }, exit: { x: 60, opacity: 0, filter: "blur(8px)" } },
-    { initial: { opacity: 0, filter: "blur(16px)", scale: 1.05 }, animate: { opacity: 1, filter: "blur(0px)", scale: 1 }, exit: { opacity: 0, filter: "blur(16px)", scale: 0.95 } },
+    { initial: { opacity: 0, filter: "blur(16px)", scale: 1.03 }, animate: { opacity: 1, filter: "blur(0px)", scale: 1 }, exit: { opacity: 0, filter: "blur(16px)", scale: 0.97 } },
     { initial: { y: 30, opacity: 0 }, animate: { y: 0, opacity: 1 }, exit: { y: -30, opacity: 0 } },
     { initial: { x: 60, opacity: 0, filter: "blur(8px)" }, animate: { x: 0, opacity: 1, filter: "blur(0px)" }, exit: { x: -60, opacity: 0, filter: "blur(8px)" } },
   ];
   const v = variants[idx % variants.length];
 
   return (
-    <div className="relative h-[3.2em] md:h-[2.4em] overflow-hidden">
+    <div className="relative h-[3em] md:h-[2.4em] overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.h1
           key={idx}
@@ -136,7 +36,7 @@ function RotatingHeadline() {
           animate={v.animate}
           exit={v.exit}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display text-3xl md:text-5xl lg:text-6xl leading-tight text-terminal-bright glow-text-strong"
+          className="font-display font-semibold text-3xl md:text-5xl lg:text-6xl leading-[1.1] tracking-tight text-white"
         >
           {HEADLINES[idx]}
         </motion.h1>
@@ -146,80 +46,181 @@ function RotatingHeadline() {
 }
 
 export function HeroSection() {
-  const [bootDone, setBootDone] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLDivElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const ctasRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
 
+  // Load timeline
   useEffect(() => {
-    if (!bootDone) return;
     const ctx = gsap.context(() => {
-      gsap.from(".hero-reveal", {
-        opacity: 0,
-        y: 24,
-        duration: 0.7,
-        ease: "power2.out",
-        stagger: 0.12,
-      });
-    }, heroRef);
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.fromTo(
+        gridRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 1 },
+      )
+        .fromTo(
+          lineRef.current,
+          { width: "0%" },
+          { width: "100%", duration: 0.8, ease: "power3.inOut" },
+          "-=0.6",
+        )
+        .fromTo(
+          labelRef.current,
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          "-=0.3",
+        )
+        .fromTo(
+          headlineRef.current,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8 },
+          "-=0.2",
+        )
+        .fromTo(
+          subRef.current,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          "-=0.4",
+        )
+        .fromTo(
+          ctasRef.current?.children ?? [],
+          { scale: 0.85, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, stagger: 0.15 },
+          "-=0.3",
+        )
+        .fromTo(
+          indicatorRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.6 },
+          "-=0.2",
+        );
+    }, sectionRef);
     return () => ctx.revert();
-  }, [bootDone]);
+  }, []);
+
+  // Scroll parallax
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const trig = {
+        trigger: sectionRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: 1,
+      };
+      gsap.to(gridRef.current, { y: 80, ease: "none", scrollTrigger: trig });
+      gsap.to(headlineRef.current, { y: 320, ease: "none", scrollTrigger: trig });
+      gsap.to(subRef.current, { y: 440, ease: "none", scrollTrigger: trig });
+      gsap.to(ctasRef.current, { y: 520, ease: "none", scrollTrigger: trig });
+      gsap.to(indicatorRef.current, { opacity: 0, ease: "none", scrollTrigger: { ...trig, end: "10% top" } });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="hero"
-      className="relative min-h-screen w-full overflow-hidden border-b border-terminal/15"
+      className="relative min-h-screen w-full overflow-hidden"
     >
-      {!bootDone && <BootSequence onDone={() => setBootDone(true)} />}
+      {/* Background grid */}
+      <div
+        ref={gridRef}
+        className="absolute inset-0 grid-dots opacity-0"
+        style={{ willChange: "transform, opacity" }}
+      />
+      {/* Atmospheric glows */}
+      <div
+        className="pointer-events-none absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full blur-3xl opacity-25"
+        style={{ background: "radial-gradient(circle, #1A6EFF 0%, transparent 70%)" }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full blur-3xl opacity-20"
+        style={{ background: "radial-gradient(circle, #00FF41 0%, transparent 70%)" }}
+      />
 
-      {bootDone && (
-        <div ref={heroRef} className="relative z-10 mx-auto max-w-6xl px-6 md:px-12 pt-32 md:pt-40 pb-24">
-          <div className="hero-reveal font-terminal text-terminal/80 text-sm md:text-base mb-6 tracking-wide">
-            guilherme@portfolio:~$ <span className="blink-caret" />
-          </div>
-
-          <div className="hero-reveal mb-8">
-            <RotatingHeadline />
-          </div>
-
-          <p className="hero-reveal max-w-2xl text-base md:text-lg text-foreground/80 mb-10 leading-relaxed">
-            Analista NOC &amp; DevOps com experiência em infraestrutura,
-            automação e desenvolvimento de software.
-          </p>
-
-          <div className="hero-reveal flex flex-wrap gap-4">
-            <a
-              href="#projects"
-              className="group relative inline-flex items-center gap-2 border border-terminal px-6 py-3 font-terminal text-terminal hover:bg-terminal hover:text-background transition-colors glow-box-sm"
-            >
-              <span className="text-terminal/60 group-hover:text-background/70">$</span>
-              ./ver_projetos
-              <span className="ml-1 inline-block w-2 h-4 bg-current animate-pulse" />
-            </a>
-            <a
-              href="https://wa.me/55XXXXXXXXXX"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 border border-terminal/30 px-6 py-3 font-terminal text-terminal/70 hover:text-terminal hover:border-terminal/70 transition-colors"
-            >
-              <span className="text-terminal/40">$</span>
-              ./falar_comigo --whatsapp
-            </a>
-          </div>
-
-          <div className="hero-reveal mt-16 flex items-center gap-3 text-xs font-terminal text-terminal/50">
-            <span className="inline-block h-2 w-2 rounded-full bg-terminal animate-pulse glow-box-sm" />
-            session active &middot; uptime: continuous
-          </div>
-        </div>
-      )}
-
-      {/* bottom-right clock */}
-      <div className="absolute bottom-6 right-6 md:bottom-8 md:right-10 z-30">
-        <LiveClock />
+      {/* Top thin gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px overflow-hidden">
+        <div ref={lineRef} className="h-full grad-bg" style={{ width: "0%" }} />
       </div>
 
-      {/* top-left tag */}
-      <div className="absolute top-6 left-6 md:top-8 md:left-12 z-30 font-terminal text-xs text-terminal/60">
-        [ portfolio.local ] :: tty1
+      <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-12 pt-32 md:pt-40 pb-24">
+        <div
+          ref={labelRef}
+          className="font-mono text-xs md:text-sm text-muted tracking-[0.25em] uppercase mb-6 flex items-center gap-3"
+          style={{ willChange: "transform, opacity" }}
+        >
+          <span className="inline-block h-px w-8 grad-bg" />
+          GUILHERME AIRES — NOC / DEVOPS / DEV
+        </div>
+
+        <div ref={headlineRef} className="mb-8" style={{ willChange: "transform" }}>
+          <RotatingHeadline />
+        </div>
+
+        <p
+          ref={subRef}
+          className="max-w-2xl text-base md:text-lg text-muted leading-relaxed mb-10"
+          style={{ willChange: "transform" }}
+        >
+          Profissional de TI com atuação em NOC, DevOps e desenvolvimento
+          de software. São Paulo, Brasil.
+        </p>
+
+        <div
+          ref={ctasRef}
+          className="flex flex-wrap gap-4"
+          style={{ willChange: "transform" }}
+        >
+          <motion.a
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            href="#projects"
+            className="inline-flex items-center gap-2 grad-bg text-black font-medium px-6 py-3 rounded-md font-display tracking-tight glow-grad"
+          >
+            Ver Projetos
+            <span aria-hidden>→</span>
+          </motion.a>
+          <motion.a
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            href="#contact"
+            className="grad-border rounded-md inline-flex items-center gap-2 px-6 py-3 text-white font-display tracking-tight bg-black/20"
+          >
+            Entre em Contato
+          </motion.a>
+        </div>
+
+        <div className="mt-16 flex items-center gap-3 text-xs font-mono text-muted">
+          <span className="relative inline-flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-green opacity-60 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green" />
+          </span>
+          status: online · São Paulo, BR
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div
+        ref={indicatorRef}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-0"
+      >
+        <span className="font-mono text-[10px] tracking-[0.3em] text-muted uppercase">
+          scroll
+        </span>
+        <div className="h-10 w-px relative overflow-hidden">
+          <div className="absolute top-0 h-4 w-full grad-bg pulse-grad" />
+        </div>
+      </div>
+
+      {/* Top-right tag */}
+      <div className="absolute top-6 right-6 md:top-8 md:right-12 z-30 font-mono text-[10px] md:text-xs text-muted tracking-widest">
+        // portfolio · v2.0
       </div>
     </section>
   );
