@@ -1,152 +1,162 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
-type Skill = { label: string; value: number };
-type Group = { title: string; subtitle: string; tone: "blue" | "green"; items: Skill[] };
+type Tool = {
+  name: string;
+  tag: string;
+  abbr: string;
+  /** color hint for the icon badge gradient */
+  tone?: "blue" | "green" | "mix";
+};
+
+type Group = {
+  title: string;
+  subtitle: string;
+  tools: Tool[];
+};
 
 const GROUPS: Group[] = [
   {
-    title: "Infrastructure & NOC",
-    subtitle: "monitoramento · incidentes",
-    tone: "blue",
-    items: [
-      { label: "Monitoramento de Redes", value: 90 },
-      { label: "Gestão de Incidentes", value: 85 },
-      { label: "Linux Administration", value: 80 },
-      { label: "Firewall IPTables/UFW", value: 75 },
+    title: "NOC & Monitoramento",
+    subtitle: "observabilidade · análise",
+    tools: [
+      { name: "Grafana", tag: "dashboards", abbr: "Gf", tone: "mix" },
+      { name: "Zabbix", tag: "monitoring", abbr: "Zb", tone: "blue" },
+      { name: "Prometheus", tag: "metrics", abbr: "Pr", tone: "blue" },
+      { name: "Reverse Proxy", tag: "Nginx · HAProxy", abbr: "Rp", tone: "blue" },
+      { name: "Pentest", tag: "análise de rede", abbr: "Pt", tone: "green" },
     ],
   },
   {
-    title: "DevOps & Automation",
-    subtitle: "pipelines · containers",
-    tone: "blue",
-    items: [
-      { label: "Shell Script / Bash", value: 80 },
-      { label: "Docker & Containers", value: 70 },
-      { label: "CI/CD Pipelines", value: 65 },
-      { label: "Git & GitHub Actions", value: 70 },
+    title: "DevOps & Infraestrutura",
+    subtitle: "pipelines · containers · cloud",
+    tools: [
+      { name: "CI/CD", tag: "GitHub Actions", abbr: "Ci", tone: "blue" },
+      { name: "Docker", tag: "containers", abbr: "Dk", tone: "blue" },
+      { name: "Kubernetes", tag: "orchestration", abbr: "K8", tone: "blue" },
+      { name: "Terraform", tag: "infra as code", abbr: "Tf", tone: "mix" },
+      { name: "SSH & VPN", tag: "tunneling", abbr: "Sh", tone: "green" },
+      { name: "Git & GitHub", tag: "version control", abbr: "Gh", tone: "mix" },
     ],
   },
   {
     title: "Development",
-    subtitle: "código · aplicações",
-    tone: "green",
-    items: [
-      { label: "Python", value: 75 },
-      { label: "JavaScript", value: 65 },
-      { label: "Java", value: 60 },
-      { label: "React", value: 60 },
+    subtitle: "código · aplicações · APIs",
+    tools: [
+      { name: "Python", tag: "Django · Flask · FastAPI", abbr: "Py", tone: "green" },
+      { name: "TypeScript", tag: "type-safe JS", abbr: "Ts", tone: "blue" },
+      { name: "Java Spring Boot", tag: "enterprise apps", abbr: "Jv", tone: "green" },
+      { name: "React", tag: "frontend SPA", abbr: "Rx", tone: "blue" },
+      { name: "REST API", tag: "integrations", abbr: "Ap", tone: "mix" },
     ],
   },
 ];
 
-function SkillCard({ group, rowIndex }: { group: Group; rowIndex: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const barsRef = useRef<HTMLDivElement>(null);
-  const [pcts, setPcts] = useState<number[]>(() => group.items.map(() => 0));
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-    const ctx = gsap.context(() => {
-      // card enter
-      gsap.fromTo(
-        cardRef.current,
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.9,
-          delay: rowIndex * 0.15,
-          ease: "power3.out",
-          scrollTrigger: { trigger: cardRef.current, start: "top 85%" },
-        },
-      );
-      // bars
-      const bars = barsRef.current?.querySelectorAll<HTMLDivElement>(".skill-bar-fill") ?? [];
-      bars.forEach((bar, i) => {
-        const target = group.items[i].value;
-        gsap.fromTo(
-          bar,
-          { width: "0%" },
-          {
-            width: `${target}%`,
-            duration: 1.2,
-            ease: "power2.out",
-            delay: rowIndex * 0.15 + 0.3 + i * 0.08,
-            scrollTrigger: { trigger: cardRef.current, start: "top 85%" },
-          },
-        );
-        const counter = { v: 0 };
-        gsap.to(counter, {
-          v: target,
-          duration: 1.2,
-          delay: rowIndex * 0.15 + 0.3 + i * 0.08,
-          ease: "power2.out",
-          scrollTrigger: { trigger: cardRef.current, start: "top 85%" },
-          onUpdate: () =>
-            setPcts((prev) => {
-              const next = [...prev];
-              next[i] = Math.round(counter.v);
-              return next;
-            }),
-        });
-      });
-    }, cardRef);
-    return () => ctx.revert();
-  }, [group, rowIndex]);
-
+function ToolCard({ tool, index }: { tool: Tool; index: number }) {
   return (
     <motion.div
-      ref={cardRef}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="grad-border glass rounded-xl p-6 md:p-7 relative overflow-hidden"
-      style={{ willChange: "transform" }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="tool-card group relative grad-border glass rounded-xl p-5 flex items-center gap-4 overflow-hidden"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        willChange: "transform",
+      }}
+      data-card-index={index}
     >
-      {/* accent glow */}
+      {/* hover glow */}
       <div
-        className={`absolute -top-20 -right-20 h-40 w-40 rounded-full blur-3xl opacity-30 ${
-          group.tone === "blue" ? "bg-blue" : "bg-green"
-        }`}
+        className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"
         style={{
           background:
-            group.tone === "blue"
-              ? "radial-gradient(circle, #1A6EFF 0%, transparent 70%)"
-              : "radial-gradient(circle, #00FF41 0%, transparent 70%)",
+            tool.tone === "green"
+              ? "radial-gradient(circle, #00FF41 0%, transparent 70%)"
+              : tool.tone === "blue"
+                ? "radial-gradient(circle, #1A6EFF 0%, transparent 70%)"
+                : "radial-gradient(circle, #1A6EFF 0%, #00FF41 80%, transparent 100%)",
         }}
       />
-      <div className="relative">
-        <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-muted mb-2">
-          {group.subtitle}
-        </div>
-        <h3 className="font-display font-semibold text-xl md:text-2xl text-white mb-6 tracking-tight">
-          {group.title}
-        </h3>
 
-        <div ref={barsRef} className="space-y-4">
-          {group.items.map((s, i) => (
-            <div key={s.label}>
-              <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                <span className="font-body text-sm text-white/85 truncate">{s.label}</span>
-                <span className="font-mono text-xs grad-text font-semibold tabular-nums">
-                  {String(pcts[i]).padStart(2, "0")}%
-                </span>
-              </div>
-              <div className="relative h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                <div
-                  className="skill-bar-fill absolute inset-y-0 left-0 rounded-full grad-bg"
-                  style={{ width: "0%", willChange: "width" }}
-                />
-              </div>
-            </div>
-          ))}
+      {/* icon badge */}
+      <motion.div
+        whileHover={{ scale: 1.08 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="relative shrink-0 h-12 w-12 rounded-lg flex items-center justify-center font-mono text-sm font-semibold text-white"
+        style={{
+          background:
+            tool.tone === "green"
+              ? "linear-gradient(135deg, rgba(0,255,65,0.25), rgba(0,255,65,0.05))"
+              : tool.tone === "blue"
+                ? "linear-gradient(135deg, rgba(26,110,255,0.3), rgba(26,110,255,0.05))"
+                : "linear-gradient(135deg, rgba(26,110,255,0.3), rgba(0,255,65,0.2))",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "inset 0 0 12px rgba(255,255,255,0.04)",
+        }}
+      >
+        {tool.abbr}
+      </motion.div>
+
+      <div className="min-w-0 flex-1">
+        <div className="font-mono text-[15px] text-white truncate">{tool.name}</div>
+        <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted mt-0.5 truncate">
+          {tool.tag}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function SkillGroup({ group, groupIndex }: { group: Group; groupIndex: number }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!rootRef.current) return;
+    const ctx = gsap.context(() => {
+      const cards = rootRef.current!.querySelectorAll<HTMLElement>(".tool-card");
+      cards.forEach((card, i) => {
+        const fromX = i % 2 === 0 ? -60 : 60;
+        gsap.fromTo(
+          card,
+          { x: fromX, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.7,
+            delay: i * 0.225 + groupIndex * 0.15,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 75%",
+              toggleActions: "play none none none",
+            },
+          },
+        );
+      });
+    }, rootRef);
+    return () => ctx.revert();
+  }, [groupIndex]);
+
+  return (
+    <div ref={rootRef} className="mb-14 last:mb-0">
+      <div className="mb-6 flex items-baseline gap-4">
+        <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted flex items-center gap-3">
+          <span className="inline-block h-px w-8 grad-bg" />
+          {group.subtitle}
+        </div>
+      </div>
+      <h3 className="font-display font-semibold text-2xl md:text-3xl text-white tracking-tight mb-7">
+        {group.title}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+        {group.tools.map((t, i) => (
+          <ToolCard key={t.name} tool={t} index={i} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -166,11 +176,9 @@ export function SkillsSection() {
           Stack &amp; <span className="grad-text">Habilidades</span>
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {GROUPS.map((g, i) => (
-            <SkillCard key={g.title} group={g} rowIndex={i} />
-          ))}
-        </div>
+        {GROUPS.map((g, i) => (
+          <SkillGroup key={g.title} group={g} groupIndex={i} />
+        ))}
       </div>
     </section>
   );
