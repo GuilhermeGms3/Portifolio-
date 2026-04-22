@@ -37,8 +37,9 @@ function DrawingHeadline() {
 
     let len = 0;
     try {
-      len = (node as unknown as SVGGeometryElement).getComputedTextLength
-        ? node.getComputedTextLength() * 2.2 // approx stroke length
+      const textNode = node as SVGTextElement & { getComputedTextLength?: () => number };
+      len = textNode.getComputedTextLength
+        ? textNode.getComputedTextLength() * 2.2
         : 1200;
     } catch {
       setSupportsStroke(false);
