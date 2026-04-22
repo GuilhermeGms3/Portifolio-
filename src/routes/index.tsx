@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { initScrollDefaults } from "@/lib/scroll-init";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { CustomCursor } from "@/components/CustomCursor";
 import { HeroSection } from "@/components/sections/HeroSection";
@@ -31,6 +33,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  useEffect(() => {
+    initScrollDefaults();
+  }, []);
   return (
     <main className="relative min-h-screen bg-background text-foreground">
       <ScanlineOverlay />
