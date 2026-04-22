@@ -5,414 +5,519 @@ import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 
 gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
 
-type Stop = {
+/**
+ * "A Jornada de um Pacote IP" — traceroute visualization.
+ * Left: terminal typing traceroute output as user scrolls.
+ * Right: SVG topology revealing nodes + ping packets per phase.
+ * After packet reaches destination: career cards slide in.
+ */
+
+type Hop = {
   id: string;
-  pct: number; // position along path
+  cmd: string;
   label: string;
-  period: string;
-  title: string;
-  body: string;
-  tags: string[];
-  accent: "blue" | "blueCyan" | "mix" | "green";
+  card: {
+    badge: string;
+    period: string;
+    title: string;
+    body: string;
+    tags: string[];
+  } | null;
+  color: string;
 };
 
-const STOPS: Stop[] = [
+const HOPS: Hop[] = [
   {
-    id: "origin",
-    pct: 0,
-    label: "ORIGEM",
-    period: "Início",
-    title: "Formação & Primeiros Passos",
-    body: "Início da jornada em tecnologia, estudos em infraestrutura de redes, sistemas operacionais Linux e fundamentos de TI.",
-    tags: ["Formação", "Linux", "Redes"],
-    accent: "blue",
+    id: "modem",
+    cmd: "Hop 1:  modem-casa.local        1ms  [ORIGIN]",
+    label: "modem-casa.local",
+    card: null,
+    color: "#1A6EFF",
   },
   {
-    id: "hop1",
-    pct: 0.33,
-    label: "HOP 01 — SERVICE DESK N2",
-    period: "Janeiro 2024 — Dezembro 2025",
-    title: "Analista Service Desk N2",
-    body: "Atendimento e resolução de chamados N2, suporte técnico avançado a usuários e sistemas, diagnóstico de falhas em infraestrutura, escalonamento e gestão de incidentes críticos. Atuação com ferramentas de monitoramento e ticketing em ambiente corporativo.",
-    tags: ["N2 Support", "Incident Management", "Infra"],
-    accent: "blueCyan",
+    id: "isp",
+    cmd: "Hop 2:  isp-gateway.net         4ms  [ISP]",
+    label: "isp-gateway.net",
+    card: {
+      badge: "[HOP 01]",
+      period: "Janeiro 2024 — Dezembro 2025",
+      title: "Service Desk N2",
+      body: "Atendimento e resolução de chamados N2, suporte técnico avançado, diagnóstico de falhas em infraestrutura, escalonamento e gestão de incidentes críticos. Ambiente corporativo com ferramentas de monitoramento e ticketing.",
+      tags: ["N2 Support", "Incident Management", "Infra"],
+    },
+    color: "#00D4FF",
   },
   {
-    id: "hop2",
-    pct: 0.66,
-    label: "HOP 02 — DEVOPS & AUTOMAÇÃO",
-    period: "Em desenvolvimento",
-    title: "DevOps & Automação",
-    body: "Evolução para práticas DevOps: automação com Shell Script e Python, implementação de pipelines CI/CD, containers Docker, orquestração Kubernetes, infraestrutura como código com Terraform e gestão de ambientes com Grafana, Zabbix e Prometheus.",
-    tags: ["Docker", "Kubernetes", "Terraform", "CI/CD"],
-    accent: "mix",
+    id: "backbone",
+    cmd: "Hop 3:  internet-backbone.net   12ms [INTERNET]",
+    label: "internet-backbone.net",
+    card: {
+      badge: "[HOP 02]",
+      period: "Em desenvolvimento",
+      title: "DevOps & Automação",
+      body: "Automação com Shell Script e Python, pipelines CI/CD, Docker, Kubernetes, Terraform, Grafana, Zabbix e Prometheus.",
+      tags: ["Docker", "Kubernetes", "Terraform", "CI/CD"],
+    },
+    color: "#00D4FF",
   },
   {
     id: "destination",
-    pct: 1,
-    label: "DESTINATION — FULL STACK",
-    period: "Presente & Futuro",
-    title: "Full Stack Developer + DevOps",
-    body: "Integração completa entre infraestrutura e desenvolvimento. Projetos em Python, TypeScript, Java Spring Boot e React. Disponível para freelas e oportunidades que conectem as duas áreas.",
-    tags: ["Python", "TypeScript", "React", "Full Stack"],
-    accent: "green",
+    cmd: "Hop 4:  guilherme.dev           18ms [DESTINATION]",
+    label: "guilherme.dev — DESTINATION REACHED",
+    card: {
+      badge: "[DESTINATION]",
+      period: "Presente & Futuro",
+      title: "Full Stack Developer",
+      body: "Projetos em Python, TypeScript, Java Spring Boot e React. Freelas e oportunidades que conectem infraestrutura e desenvolvimento.",
+      tags: ["Python", "TypeScript", "React", "Java Spring"],
+    },
+    color: "#00FF41",
   },
 ];
 
-const ACCENT_COLOR: Record<Stop["accent"], string> = {
-  blue: "#1A6EFF",
-  blueCyan: "#00D4FF",
-  mix: "#1A6EFF",
-  green: "#00FF41",
-};
+const TERMINAL_HEADER = [
+  "$ traceroute guilherme.dev",
+  "traceroute to guilherme.dev, 4 hops max",
+];
+const TERMINAL_FOOTER = [
+  "> Resolving route...",
+  "> Connection established.",
+  "> Welcome to guilherme.dev",
+];
 
-// SVG path for the network route — diagonal organic flow.
-// viewBox: 0 0 1200 600
-const NETWORK_PATH =
-  "M 40 480 L 180 480 C 240 480 260 380 320 380 L 460 380 C 520 380 540 280 600 280 L 740 280 C 800 280 820 200 880 200 L 1020 200 C 1080 200 1100 130 1160 130";
+// Node positions in SVG viewBox 0 0 800 600
+const NODE_POS = [
+  { x: 90, y: 130 },
+  { x: 290, y: 240 },
+  { x: 510, y: 360 },
+  { x: 710, y: 480 },
+];
 
-// Helper: get point on path at pct (approx, using SVG getPointAtLength)
-function getNodePos(pathEl: SVGPathElement, pct: number) {
-  const len = pathEl.getTotalLength();
-  return pathEl.getPointAtLength(len * pct);
+function clamp(n: number) {
+  return Math.max(0, Math.min(1, n));
+}
+
+function NodeIcon({ kind, color }: { kind: string; color: string }) {
+  // simple inline svg shapes
+  if (kind === "modem") {
+    return (
+      <g>
+        <rect x={-18} y={-12} width={36} height={24} rx={3} fill="#0a0a0a" stroke={color} strokeWidth={1.5} />
+        <circle cx={-10} cy={0} r={2} fill={color} />
+        <circle cx={-2} cy={0} r={2} fill={color} />
+        <circle cx={6} cy={0} r={2} fill={color} />
+        <line x1={-22} y1={-16} x2={-14} y2={-22} stroke={color} strokeWidth={1.2} />
+        <line x1={22} y1={-16} x2={14} y2={-22} stroke={color} strokeWidth={1.2} />
+      </g>
+    );
+  }
+  if (kind === "isp") {
+    return (
+      <g>
+        <line x1={0} y1={-22} x2={-12} y2={14} stroke={color} strokeWidth={1.5} />
+        <line x1={0} y1={-22} x2={12} y2={14} stroke={color} strokeWidth={1.5} />
+        <line x1={-10} y1={6} x2={10} y2={6} stroke={color} strokeWidth={1.2} />
+        <circle cx={0} cy={-22} r={3} fill={color} />
+      </g>
+    );
+  }
+  if (kind === "backbone") {
+    return (
+      <g>
+        <circle cx={0} cy={0} r={18} fill="none" stroke={color} strokeWidth={1.5} />
+        <ellipse cx={0} cy={0} rx={18} ry={7} fill="none" stroke={color} strokeWidth={1} />
+        <line x1={-18} y1={0} x2={18} y2={0} stroke={color} strokeWidth={1} />
+      </g>
+    );
+  }
+  // destination — laptop
+  return (
+    <g>
+      <rect x={-18} y={-14} width={36} height={22} rx={2} fill="#0a0a0a" stroke={color} strokeWidth={1.5} />
+      <rect x={-22} y={8} width={44} height={3} rx={1} fill={color} />
+      <circle cx={0} cy={-3} r={1.5} fill={color} />
+    </g>
+  );
 }
 
 export function TimelineSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
-  const packetRef = useRef<SVGGElement>(null);
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const nodeRefs = useRef<Array<SVGGElement | null>>([]);
-  const flashRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const [packetCount, setPacketCount] = useState(1);
-  const [nodePositions, setNodePositions] = useState<Array<{ x: number; y: number }>>([]);
-  const [pathLen, setPathLen] = useState(0);
-
-  // Compute node positions once SVG is mounted
-  useEffect(() => {
-    if (!pathRef.current) return;
-    const positions = STOPS.map((s) => {
-      const p = getNodePos(pathRef.current!, s.pct);
-      return { x: p.x, y: p.y };
-    });
-    setNodePositions(positions);
-    setPathLen(pathRef.current.getTotalLength());
-  }, []);
+  const lineRefs = useRef<Array<SVGPathElement | null>>([]);
+  const pingRefs = useRef<Array<SVGCircleElement | null>>([]);
+  const rippleRefs = useRef<Array<SVGCircleElement | null>>([]);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (!sectionRef.current || !stickyRef.current || !pathRef.current || !packetRef.current) return;
-    if (nodePositions.length === 0) return;
-
+    if (!sectionRef.current || !stickyRef.current) return;
     const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
-    const scrubVal = isMobile ? 2.5 : 5;
+    const scrubVal = isMobile ? 9 : 18;
 
     const ctx = gsap.context(() => {
-      // Packet travels along the path
-      gsap.to(packetRef.current, {
-        motionPath: {
-          path: pathRef.current!,
-          align: pathRef.current!,
-          autoRotate: false,
-          alignOrigin: [0.5, 0.5],
-        },
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: scrubVal,
-          pin: stickyRef.current,
-          pinSpacing: false,
-        },
-      });
-
-      // Reveal each card / pulse each node when scroll progress reaches its pct
       ScrollTrigger.create({
         trigger: sectionRef.current,
         start: "top top",
         end: "bottom bottom",
+        pin: stickyRef.current,
+        pinSpacing: false,
         scrub: scrubVal,
+        snap: {
+          snapTo: [0, 0.25, 0.5, 0.75, 1],
+          duration: { min: 0.8, max: 1.5 },
+          ease: "power2.inOut",
+          delay: 0.3,
+        },
         onUpdate: (self) => {
-          const p = self.progress;
-          STOPS.forEach((stop, i) => {
-            const card = cardRefs.current[i];
-            const node = nodeRefs.current[i];
-            const flash = flashRefs.current[i];
-            // Reveal threshold: when scroll passes the stop's pct minus a small lead
-            const lead = 0.04;
-            const triggerAt = Math.max(0, stop.pct - lead);
-            const t = Math.max(0, Math.min(1, (p - triggerAt) / 0.08));
-            if (card) {
-              card.style.opacity = String(t);
-              card.style.transform = `translateY(${(1 - t) * 30}px)`;
-            }
-            if (node) {
-              const scale = 1 + Math.sin(t * Math.PI) * 0.5;
-              const opacity = 0.55 + t * 0.45;
-              node.setAttribute("transform", `translate(${nodePositions[i].x} ${nodePositions[i].y}) scale(${scale})`);
-              node.style.opacity = String(opacity);
-            }
-            if (flash) {
-              const fadeT = Math.max(0, Math.min(1, (p - stop.pct) / 0.05));
-              const fadeOut = Math.max(0, Math.min(1, (p - stop.pct - 0.05) / 0.05));
-              flash.style.opacity = String(Math.max(0, fadeT - fadeOut));
-            }
-          });
-
-          // packet counter
-          setPacketCount(Math.max(1, Math.floor(p * 9999)));
+          setProgress(self.progress);
         },
       });
     }, sectionRef);
-
     return () => ctx.revert();
-  }, [nodePositions]);
+  }, []);
+
+  // Per-frame DOM updates driven by progress
+  useEffect(() => {
+    const p = progress;
+    HOPS.forEach((hop, i) => {
+      // each hop is reached at fractions: 0.18, 0.40, 0.62, 0.84
+      const reachAt = 0.18 + i * 0.22;
+      const arrivalT = clamp((p - (reachAt - 0.12)) / 0.12);
+      const node = nodeRefs.current[i];
+      const card = cardRefs.current[i];
+      const ping = pingRefs.current[i];
+      const ripple = rippleRefs.current[i];
+      const lineToHere = i > 0 ? lineRefs.current[i - 1] : null;
+
+      // Node fade & scale-in
+      if (node) {
+        node.style.opacity = String(arrivalT);
+        const scale = 0.6 + arrivalT * 0.4;
+        const pulse =
+          arrivalT >= 1 && p < reachAt + 0.05
+            ? 1 + Math.sin((p - reachAt + 0.05) * 60) * 0.15
+            : 1;
+        node.setAttribute(
+          "transform",
+          `translate(${NODE_POS[i].x} ${NODE_POS[i].y}) scale(${scale * pulse})`,
+        );
+      }
+
+      // Connection line draws as packet approaches
+      if (lineToHere) {
+        const len = 800;
+        const lt = clamp((p - (reachAt - 0.18)) / 0.16);
+        lineToHere.style.strokeDasharray = `${len}`;
+        lineToHere.style.strokeDashoffset = String(len * (1 - lt));
+        lineToHere.style.opacity = String(0.3 + lt * 0.5);
+      }
+
+      // Ping packet travels along previous line as we approach
+      if (ping && i > 0) {
+        const lt = clamp((p - (reachAt - 0.16)) / 0.14);
+        const from = NODE_POS[i - 1];
+        const to = NODE_POS[i];
+        const x = from.x + (to.x - from.x) * lt;
+        const y = from.y + (to.y - from.y) * lt;
+        ping.setAttribute("cx", String(x));
+        ping.setAttribute("cy", String(y));
+        ping.style.opacity = lt > 0 && lt < 1 ? "1" : "0";
+      }
+
+      // Ripple at arrival
+      if (ripple) {
+        const rt = clamp((p - reachAt) / 0.06);
+        if (rt > 0 && rt < 1) {
+          ripple.setAttribute("r", String(8 + rt * 30));
+          ripple.style.opacity = String(1 - rt);
+        } else {
+          ripple.style.opacity = "0";
+        }
+      }
+
+      // Card reveal — only for hops with cards, after destination is closer
+      if (card && hop.card) {
+        // Cards reveal in sequence after packet reaches each node
+        const cardT = clamp((p - (reachAt + 0.02)) / 0.08);
+        card.style.opacity = String(cardT);
+        card.style.transform = `translateX(${(1 - cardT) * 60}px)`;
+      }
+    });
+  }, [progress]);
+
+  // Build accumulated terminal lines based on progress
+  const reachedCount = HOPS.filter((_, i) => progress >= 0.18 + i * 0.22 - 0.05).length;
+  const hopLines = HOPS.slice(0, reachedCount).map((h) => h.cmd);
+  const showFooter = progress > 0.86;
+
+  const totalPackets = Math.max(1, Math.floor(progress * 9999));
 
   return (
     <section
       ref={sectionRef}
       id="experience"
       className="relative experience-container"
-      style={{ height: "500vh", background: "var(--surface-2)" }}
+      style={{ height: "700vh", background: "var(--surface-2)" }}
     >
-      <div
-        ref={stickyRef}
-        className="h-screen w-full overflow-hidden relative grid-dots"
-      >
+      <div ref={stickyRef} className="h-screen w-full overflow-hidden relative grid-dots">
         {/* header */}
-        <div className="absolute top-8 md:top-12 left-6 md:left-12 z-20">
-          <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted mb-3 flex items-center gap-3">
+        <div className="absolute top-6 md:top-10 left-6 md:left-12 z-30">
+          <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted mb-2 flex items-center gap-3">
             <span className="inline-block h-px w-8 grad-bg" />
             experiência profissional
           </div>
-          <h2 className="font-display font-semibold text-3xl md:text-5xl lg:text-6xl text-white tracking-tight">
+          <h2 className="font-display font-semibold text-2xl md:text-4xl lg:text-5xl text-white tracking-tight">
             <span className="grad-text">Trajetória</span>
           </h2>
-          <p className="mt-2 font-mono text-xs text-muted">
-            // a jornada de um pacote IP — siga a rota
+          <p className="mt-1 font-mono text-[11px] text-muted">
+            // traceroute — siga o pacote
           </p>
         </div>
 
         {/* packet counter */}
-        <div className="absolute top-8 md:top-12 right-6 md:right-12 z-20 text-right">
-          <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted mb-1">
+        <div className="absolute top-6 md:top-10 right-6 md:right-12 z-30 text-right">
+          <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-muted mb-1">
             packets transmitted
           </div>
-          <div className="font-mono text-2xl md:text-3xl grad-text font-semibold tabular-nums">
-            {String(packetCount).padStart(4, "0")}
+          <div className="font-mono text-xl md:text-2xl grad-text font-semibold tabular-nums">
+            {String(totalPackets).padStart(4, "0")}
           </div>
         </div>
 
-        {/* SVG network path scene */}
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <svg
-            ref={svgRef}
-            viewBox="0 0 1200 600"
-            preserveAspectRatio="xMidYMid meet"
-            className="w-full h-full max-w-[1400px]"
-          >
-            <defs>
-              <linearGradient id="pkt-grad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#1A6EFF" />
-                <stop offset="100%" stopColor="#00FF41" />
-              </linearGradient>
-              <linearGradient id="path-grad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#1A6EFF" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#00FF41" stopOpacity="0.4" />
-              </linearGradient>
-              <filter id="pkt-glow" x="-200%" y="-200%" width="500%" height="500%">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter id="node-glow" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-
-            {/* Faint alternative branch routes */}
-            <g opacity="0.08" stroke="#1A6EFF" strokeWidth="0.8" fill="none">
-              <path d="M 180 480 C 240 480 280 540 360 540 L 500 540" />
-              <path d="M 600 280 C 660 280 700 220 760 130 L 880 130" />
-              <path d="M 740 280 L 740 380 L 880 380" />
-              <path d="M 320 380 L 320 280 L 460 280" />
-            </g>
-
-            {/* Drifting binary numbers along path (decorative) */}
-            <g opacity="0.06" fill="#1A6EFF" fontFamily="IBM Plex Mono" fontSize="10">
-              <text x="100" y="475">01001011</text>
-              <text x="380" y="375">11010110</text>
-              <text x="660" y="275">00101110</text>
-              <text x="940" y="195">10110001</text>
-            </g>
-
-            {/* Main network path */}
-            <path
-              ref={pathRef}
-              id="network-path"
-              d={NETWORK_PATH}
-              fill="none"
-              stroke="url(#path-grad)"
-              strokeWidth="1.5"
-              strokeDasharray={pathLen ? `${pathLen}` : undefined}
-            />
-
-            {/* Subtle path glow trail behind packet */}
-            <path
-              d={NETWORK_PATH}
-              fill="none"
-              stroke="#1A6EFF"
-              strokeWidth="6"
-              opacity="0.05"
-              filter="url(#pkt-glow)"
-            />
-
-            {/* Stop nodes */}
-            {nodePositions.map((pos, i) => (
-              <g
-                key={STOPS[i].id}
-                ref={(el) => {
-                  nodeRefs.current[i] = el;
-                }}
-                transform={`translate(${pos.x} ${pos.y})`}
-                style={{ opacity: 0.55, transformOrigin: "center", willChange: "transform, opacity" }}
-                filter="url(#node-glow)"
-              >
-                <circle r="14" fill="#0a0a0a" stroke={ACCENT_COLOR[STOPS[i].accent]} strokeWidth="1.5" opacity="0.6" />
-                <circle r="7" fill={ACCENT_COLOR[STOPS[i].accent]} />
-                <circle r="3" fill="#ffffff" opacity="0.9" />
-              </g>
-            ))}
-
-            {/* Stop labels (small, near each node) */}
-            {nodePositions.map((pos, i) => (
-              <text
-                key={`label-${STOPS[i].id}`}
-                x={pos.x}
-                y={pos.y - 26}
-                textAnchor="middle"
-                fontFamily="IBM Plex Mono"
-                fontSize="9"
-                fill="#a0aec0"
-                style={{ letterSpacing: "0.15em", textTransform: "uppercase" }}
-              >
-                {STOPS[i].label.split(" — ")[0]}
-              </text>
-            ))}
-
-            {/* The packet (sits at path origin until GSAP MotionPath kicks in) */}
-            <g
-              ref={packetRef}
-              style={{ willChange: "transform" }}
-              filter="url(#pkt-glow)"
+        <div className="h-full w-full pt-32 md:pt-36 pb-10 px-4 md:px-12 grid grid-cols-1 md:grid-cols-[40%_60%] gap-4 md:gap-8">
+          {/* LEFT — terminal */}
+          <div className="hidden md:flex flex-col">
+            <div
+              className="rounded-xl flex-1 flex flex-col overflow-hidden backdrop-blur-md"
+              style={{
+                border: "1px solid rgba(26, 110, 255, 0.3)",
+                background: "rgba(10, 10, 10, 0.92)",
+              }}
             >
-              <rect
-                x="-5"
-                y="-5"
-                width="10"
-                height="10"
-                rx="1.5"
-                fill="url(#pkt-grad)"
-                stroke="#ffffff"
-                strokeWidth="0.5"
-              />
-              {/* trailing line */}
-              <line
-                x1="-80"
-                y1="0"
-                x2="-5"
-                y2="0"
-                stroke="url(#pkt-grad)"
-                strokeWidth="1.2"
-                opacity="0.4"
-              />
-            </g>
-          </svg>
-        </div>
-
-        {/* Career cards positioned over each node */}
-        <div className="absolute inset-0 pointer-events-none">
-          {nodePositions.map((pos, i) => {
-            const stop = STOPS[i];
-            // alternate cards above/below the node
-            const above = i % 2 === 0;
-            // Convert SVG coordinates to percentages of the SVG viewport
-            const xPct = (pos.x / 1200) * 100;
-            const yPct = (pos.y / 600) * 100;
-
-            return (
-              <div key={stop.id}>
-                {/* "packet received" flash label */}
-                <div
-                  ref={(el) => {
-                    flashRefs.current[i] = el;
-                  }}
-                  className="absolute font-mono text-[10px] tracking-[0.2em] uppercase grad-text font-semibold whitespace-nowrap"
-                  style={{
-                    left: `${xPct}%`,
-                    top: `calc(${yPct}% + ${above ? "32px" : "-44px"})`,
-                    transform: "translateX(-50%)",
-                    opacity: 0,
-                    willChange: "opacity",
-                  }}
-                >
-                  {`> packet received at NODE_${String(i + 1).padStart(2, "0")}`}
+              <div
+                className="flex items-center gap-3 px-4 py-2.5 border-b"
+                style={{
+                  borderColor: "rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div className="flex gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                  <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                  <span className="h-3 w-3 rounded-full bg-[#28c840]" />
                 </div>
-
-                {/* career card */}
-                <div
-                  ref={(el) => {
-                    cardRefs.current[i] = el;
-                  }}
-                  className="absolute pointer-events-auto grad-border glass rounded-xl p-4 md:p-5 max-w-[260px] md:max-w-[280px] backdrop-blur-md"
-                  style={{
-                    left: `${xPct}%`,
-                    top: `calc(${yPct}% + ${above ? "60px" : "-100px"})`,
-                    transform: "translateX(-50%) translateY(30px)",
-                    opacity: 0,
-                    willChange: "transform, opacity",
-                    background: "rgba(10,10,10,0.85)",
-                    borderColor: "transparent",
-                  }}
-                >
-                  <div
-                    className="font-mono text-[9px] tracking-[0.25em] uppercase mb-1.5"
-                    style={{ color: ACCENT_COLOR[stop.accent] }}
-                  >
-                    {stop.period}
-                  </div>
-                  <h3 className="font-display font-semibold text-base md:text-lg text-white tracking-tight mb-2 leading-snug">
-                    {stop.title}
-                  </h3>
-                  <p className="text-muted text-[12px] md:text-[13px] leading-relaxed mb-3">
-                    {stop.body}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {stop.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="font-mono text-[9px] tracking-wide px-2 py-0.5 rounded-full bg-white/5 text-white/80 border border-white/10"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                <div className="font-mono text-[11px] text-muted ml-2 px-2 py-0.5 rounded bg-white/5">
+                  network@guilherme:~
                 </div>
               </div>
-            );
-          })}
+              <pre className="px-5 py-4 font-mono text-[12px] leading-relaxed text-[#00FF41] overflow-y-auto flex-1">
+                {TERMINAL_HEADER.map((l, i) => (
+                  <div key={`h-${i}`} style={{ color: "#a0aec0" }}>
+                    {l}
+                  </div>
+                ))}
+                <div>&nbsp;</div>
+                {hopLines.map((l, i) => (
+                  <div key={`hop-${i}`} style={{ color: i === hopLines.length - 1 ? "#00FF41" : "#cbd5e1" }}>
+                    {l}
+                  </div>
+                ))}
+                {showFooter && (
+                  <>
+                    <div>&nbsp;</div>
+                    {TERMINAL_FOOTER.map((l, i) => (
+                      <div key={`f-${i}`} style={{ color: l.includes("Welcome") ? "#00FF41" : "#a0aec0" }}>
+                        {l}
+                      </div>
+                    ))}
+                  </>
+                )}
+                {!showFooter && (
+                  <span className="inline-block w-2 h-3 bg-[#1A6EFF] animate-pulse ml-1" />
+                )}
+              </pre>
+            </div>
+          </div>
+
+          {/* RIGHT — topology + cards */}
+          <div className="relative flex flex-col">
+            <div className="relative flex-1 min-h-[300px]">
+              <svg
+                viewBox="0 0 800 600"
+                preserveAspectRatio="xMidYMid meet"
+                className="w-full h-full"
+              >
+                <defs>
+                  <linearGradient id="ping-grad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#1A6EFF" />
+                    <stop offset="100%" stopColor="#00FF41" />
+                  </linearGradient>
+                  <filter id="trace-glow" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Connection lines (between consecutive nodes) */}
+                {NODE_POS.slice(0, -1).map((from, i) => {
+                  const to = NODE_POS[i + 1];
+                  const dx = to.x - from.x;
+                  const dy = to.y - from.y;
+                  // slight curve
+                  const cx = from.x + dx / 2;
+                  const cy = from.y + dy / 2 - 30;
+                  const d = `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`;
+                  return (
+                    <path
+                      key={`line-${i}`}
+                      ref={(el) => {
+                        lineRefs.current[i] = el;
+                      }}
+                      d={d}
+                      fill="none"
+                      stroke="url(#ping-grad)"
+                      strokeWidth="1.5"
+                      style={{
+                        opacity: 0.3,
+                        strokeDasharray: 800,
+                        strokeDashoffset: 800,
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Ripples (drawn before nodes so nodes sit on top) */}
+                {NODE_POS.map((pos, i) => (
+                  <circle
+                    key={`ripple-${i}`}
+                    ref={(el) => {
+                      rippleRefs.current[i] = el;
+                    }}
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={8}
+                    fill="none"
+                    stroke={HOPS[i].color}
+                    strokeWidth={1.5}
+                    style={{ opacity: 0 }}
+                  />
+                ))}
+
+                {/* Ping packets (one per segment, indexed by destination node) */}
+                {NODE_POS.map((_, i) => (
+                  <circle
+                    key={`ping-${i}`}
+                    ref={(el) => {
+                      pingRefs.current[i] = el;
+                    }}
+                    cx={NODE_POS[i].x}
+                    cy={NODE_POS[i].y}
+                    r={4}
+                    fill="url(#ping-grad)"
+                    filter="url(#trace-glow)"
+                    style={{ opacity: 0 }}
+                  />
+                ))}
+
+                {/* Nodes */}
+                {NODE_POS.map((pos, i) => (
+                  <g
+                    key={`node-${i}`}
+                    ref={(el) => {
+                      nodeRefs.current[i] = el;
+                    }}
+                    transform={`translate(${pos.x} ${pos.y}) scale(0.6)`}
+                    filter="url(#trace-glow)"
+                    style={{
+                      opacity: 0,
+                      transformOrigin: "center",
+                      transformBox: "fill-box",
+                      willChange: "transform, opacity",
+                    }}
+                  >
+                    <circle r={28} fill="#0a0a0a" stroke={HOPS[i].color} strokeWidth={1} opacity={0.4} />
+                    <NodeIcon kind={HOPS[i].id} color={HOPS[i].color} />
+                  </g>
+                ))}
+
+                {/* Labels */}
+                {NODE_POS.map((pos, i) => (
+                  <text
+                    key={`lbl-${i}`}
+                    x={pos.x}
+                    y={pos.y + 50}
+                    textAnchor="middle"
+                    fontFamily="IBM Plex Mono"
+                    fontSize="10"
+                    fill="#a0aec0"
+                    style={{ letterSpacing: "0.1em" }}
+                  >
+                    {HOPS[i].label}
+                  </text>
+                ))}
+              </svg>
+            </div>
+
+            {/* Cards row (below topology) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              {HOPS.filter((h) => h.card).map((hop, i) => {
+                const realIdx = HOPS.findIndex((h) => h.id === hop.id);
+                return (
+                  <div
+                    key={hop.id}
+                    ref={(el) => {
+                      cardRefs.current[realIdx] = el;
+                    }}
+                    className="grad-border glass rounded-xl p-3.5 backdrop-blur-md"
+                    style={{
+                      background: "rgba(10,10,10,0.88)",
+                      opacity: 0,
+                      transform: "translateX(60px)",
+                      willChange: "transform, opacity",
+                    }}
+                  >
+                    <div
+                      className="font-mono text-[9px] tracking-[0.25em] uppercase mb-1"
+                      style={{ color: hop.color }}
+                    >
+                      {hop.card!.badge} · {hop.card!.period}
+                    </div>
+                    <h3 className="font-display font-semibold text-sm md:text-base text-white tracking-tight mb-1.5 leading-snug">
+                      {hop.card!.title}
+                    </h3>
+                    <p className="text-muted text-[11px] leading-relaxed mb-2">
+                      {hop.card!.body}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {hop.card!.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="font-mono text-[8.5px] tracking-wide px-1.5 py-0.5 rounded-full bg-white/5 text-white/80 border border-white/10"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* placeholder for unused index 0 (origin has no card) */}
+              <div
+                ref={(el) => {
+                  cardRefs.current[0] = el;
+                }}
+                className="hidden"
+              />
+            </div>
+          </div>
         </div>
 
         {/* bottom hint */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
           scroll para transmitir o pacote ↓
         </div>
       </div>

@@ -13,7 +13,8 @@ export function initScrollDefaults() {
   gsap.registerPlugin(ScrollTrigger);
   ScrollTrigger.defaults({
     anticipatePin: 1,
-    fastScrollEnd: true,
+    fastScrollEnd: false,
+    preventOverlaps: true,
   });
   initialized = true;
 }
