@@ -43,7 +43,7 @@ export function TimelineSection() {
       const track = trackRef.current!;
       const totalScroll = () => track.scrollWidth - window.innerWidth + 80;
 
-      gsap.to(track, {
+      const trackTween = gsap.to(track, {
         x: () => -totalScroll(),
         ease: "none",
         scrollTrigger: {
@@ -80,7 +80,7 @@ export function TimelineSection() {
             ease: "elastic.out(1, 0.5)",
             scrollTrigger: {
               trigger: node,
-              containerAnimation: ScrollTrigger.getAll().find((t) => t.pin === wrapperRef.current),
+              containerAnimation: trackTween,
               start: "left 60%",
             },
             delay: 0.05 * i,
@@ -100,7 +100,7 @@ export function TimelineSection() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: detail,
-              containerAnimation: ScrollTrigger.getAll().find((t) => t.pin === wrapperRef.current),
+              containerAnimation: trackTween,
               start: "left 70%",
             },
           },
