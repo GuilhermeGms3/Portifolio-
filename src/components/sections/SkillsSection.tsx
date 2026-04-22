@@ -170,6 +170,10 @@ function SkillGroup({ group }: { group: Group }) {
     const el = rootRef.current;
     let cancelled = false;
 
+    // Hide cards initially
+    const initialCards = cardsRef.current?.querySelectorAll<HTMLElement>(".tool-card") ?? [];
+    gsap.set(initialCards, { opacity: 0, scale: 0.6 });
+
     const startSequence = async () => {
       // 1. Type each line
       for (let li = 0; li < group.codeLines.length; li++) {
