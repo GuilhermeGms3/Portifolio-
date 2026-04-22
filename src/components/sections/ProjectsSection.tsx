@@ -206,7 +206,13 @@ function ProjectScene({ project, repoData }: { project: ProjectDef; repoData?: R
         end: "bottom bottom",
         pin: stickyRef.current,
         pinSpacing: false,
-        scrub: 1.5,
+        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 2 : 4,
+        snap: {
+          snapTo: [0, 0.35, 0.7, 1],
+          duration: 0.5,
+          ease: "power1.inOut",
+          delay: 0.1,
+        },
         onUpdate: (self) => {
           const p = self.progress;
 
@@ -264,7 +270,7 @@ function ProjectScene({ project, repoData }: { project: ProjectDef; repoData?: R
   }, [project]);
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: "300vh" }}>
+    <div ref={containerRef} className="relative" style={{ height: "420vh" }}>
       <div ref={stickyRef} className="h-screen w-full overflow-hidden flex items-center px-6 md:px-12 relative grid-lines">
         {/* huge background number */}
         <div
