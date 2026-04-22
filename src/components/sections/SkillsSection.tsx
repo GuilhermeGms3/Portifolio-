@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
@@ -9,13 +9,14 @@ type Tool = {
   name: string;
   tag: string;
   abbr: string;
-  /** color hint for the icon badge gradient */
   tone?: "blue" | "green" | "mix";
 };
 
 type Group = {
   title: string;
   subtitle: string;
+  filename: string;
+  codeLines: string[];
   tools: Tool[];
 };
 
@@ -23,6 +24,17 @@ const GROUPS: Group[] = [
   {
     title: "NOC & Monitoramento",
     subtitle: "observabilidade · análise",
+    filename: "noc-stack.config",
+    codeLines: [
+      "// NOC & Monitoramento",
+      "const stack = {",
+      '  monitoring: ["Grafana", "Zabbix", "Prometheus"],',
+      '  security:   ["Reverse Proxy", "Pentest"],',
+      "}",
+      "> compiling...",
+      "> dependencies resolved ✓",
+      "> stack loaded ✓",
+    ],
     tools: [
       { name: "Grafana", tag: "dashboards", abbr: "Gf", tone: "mix" },
       { name: "Zabbix", tag: "monitoring", abbr: "Zb", tone: "blue" },
@@ -34,6 +46,19 @@ const GROUPS: Group[] = [
   {
     title: "DevOps & Infraestrutura",
     subtitle: "pipelines · containers · cloud",
+    filename: "devops.yaml",
+    codeLines: [
+      "# devops.yaml",
+      "ci_cd:",
+      "  - GitHub Actions",
+      "  - Docker",
+      "  - Kubernetes",
+      "  - Terraform",
+      "tunneling: [SSH, VPN]",
+      "> applying configuration...",
+      "> environment ready ✓",
+      "> stack loaded ✓",
+    ],
     tools: [
       { name: "CI/CD", tag: "GitHub Actions", abbr: "Ci", tone: "blue" },
       { name: "Docker", tag: "containers", abbr: "Dk", tone: "blue" },
@@ -46,6 +71,16 @@ const GROUPS: Group[] = [
   {
     title: "Development",
     subtitle: "código · aplicações · APIs",
+    filename: "dev-stack.ts",
+    codeLines: [
+      "// dev-stack.ts",
+      "import { Django, Flask, FastAPI } from 'python'",
+      "import { SpringBoot } from 'java'",
+      "import { React, TypeScript } from 'frontend'",
+      "> building modules...",
+      "> all systems go ✓",
+      "> stack loaded ✓",
+    ],
     tools: [
       { name: "Python", tag: "Django · Flask · FastAPI", abbr: "Py", tone: "green" },
       { name: "TypeScript", tag: "type-safe JS", abbr: "Ts", tone: "blue" },
@@ -56,7 +91,7 @@ const GROUPS: Group[] = [
   },
 ];
 
-function ToolCard({ tool, index }: { tool: Tool; index: number }) {
+function ToolCard({ tool }: { tool: Tool }) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -66,9 +101,7 @@ function ToolCard({ tool, index }: { tool: Tool; index: number }) {
         background: "rgba(255,255,255,0.04)",
         willChange: "transform",
       }}
-      data-card-index={index}
     >
-      {/* hover glow */}
       <div
         className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"
         style={{
@@ -80,8 +113,6 @@ function ToolCard({ tool, index }: { tool: Tool; index: number }) {
                 : "radial-gradient(circle, #1A6EFF 0%, #00FF41 80%, transparent 100%)",
         }}
       />
-
-      {/* icon badge */}
       <motion.div
         whileHover={{ scale: 1.08 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
@@ -99,7 +130,6 @@ function ToolCard({ tool, index }: { tool: Tool; index: number }) {
       >
         {tool.abbr}
       </motion.div>
-
       <div className="min-w-0 flex-1">
         <div className="font-mono text-[15px] text-white truncate">{tool.name}</div>
         <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted mt-0.5 truncate">
@@ -110,38 +140,90 @@ function ToolCard({ tool, index }: { tool: Tool; index: number }) {
   );
 }
 
-function SkillGroup({ group, groupIndex }: { group: Group; groupIndex: number }) {
-  const rootRef = useRef<HTMLDivElement>(null);
+function lineColor(line: string): string {
+  if (line.startsWith(">")) {
+    return line.includes("✓") ? "#00FF41" : "#a0aec0";
+  }
+  if (line.startsWith("//") || line.startsWith("#")) return "#6b7280";
+  return "#e2e8f0";
+}
 
+function SkillGroup({ group }: { group: Group }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const ideRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const [typedLines, setTypedLines] = useState<string[]>([]);
+  const [currentLine, setCurrentLine] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  const [done, setDone] = useState(false);
+
+  // Cursor blink
+  useEffect(() => {
+    const id = window.setInterval(() => setShowCursor((s) => !s), 400);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // Trigger sequence on scroll enter
   useEffect(() => {
     if (!rootRef.current) return;
-    const ctx = gsap.context(() => {
-      const cards = rootRef.current!.querySelectorAll<HTMLElement>(".tool-card");
-      cards.forEach((card, i) => {
-        const fromX = i % 2 === 0 ? -60 : 60;
-        gsap.fromTo(
-          card,
-          { x: fromX, opacity: 0 },
-          {
-            x: 0,
-            opacity: 1,
-            duration: 0.7,
-            delay: i * 0.225 + groupIndex * 0.15,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 75%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
+    const el = rootRef.current;
+    let cancelled = false;
+
+    const startSequence = async () => {
+      // 1. Type each line
+      for (let li = 0; li < group.codeLines.length; li++) {
+        if (cancelled) return;
+        const line = group.codeLines[li];
+        for (let ci = 0; ci <= line.length; ci++) {
+          if (cancelled) return;
+          setCurrentLine(line.slice(0, ci));
+          await new Promise((r) => setTimeout(r, 28));
+        }
+        setTypedLines((prev) => [...prev, line]);
+        setCurrentLine("");
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      // 2. IDE slides up + cards burst in
+      if (cancelled) return;
+      gsap.to(ideRef.current, {
+        y: -100,
+        opacity: 0,
+        duration: 0.5,
+        ease: "power2.in",
       });
-    }, rootRef);
-    return () => ctx.revert();
-  }, [groupIndex]);
+      const cardEls = cardsRef.current?.querySelectorAll<HTMLElement>(".tool-card") ?? [];
+      gsap.fromTo(
+        cardEls,
+        { scale: 0.6, opacity: 0 },
+        {
+          scale: 1,
+          opacity: 1,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: "back.out(1.4)",
+          delay: 0.3,
+        },
+      );
+      setDone(true);
+    };
+
+    const st = ScrollTrigger.create({
+      trigger: el,
+      start: "top 70%",
+      once: true,
+      onEnter: () => {
+        startSequence();
+      },
+    });
+
+    return () => {
+      cancelled = true;
+      st.kill();
+    };
+  }, [group]);
 
   return (
-    <div ref={rootRef} className="mb-14 last:mb-0">
+    <div ref={rootRef} className="mb-20 last:mb-0">
       <div className="mb-6 flex items-baseline gap-4">
         <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted flex items-center gap-3">
           <span className="inline-block h-px w-8 grad-bg" />
@@ -151,9 +233,63 @@ function SkillGroup({ group, groupIndex }: { group: Group; groupIndex: number })
       <h3 className="font-display font-semibold text-2xl md:text-3xl text-white tracking-tight mb-7">
         {group.title}
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
-        {group.tools.map((t, i) => (
-          <ToolCard key={t.name} tool={t} index={i} />
+
+      {/* IDE compile panel */}
+      <div className="relative" style={{ minHeight: done ? 0 : "auto" }}>
+        {!done && (
+          <div
+            ref={ideRef}
+            className="rounded-xl overflow-hidden mb-6 backdrop-blur-md"
+            style={{
+              border: "1px solid rgba(26, 110, 255, 0.3)",
+              background: "rgba(10, 10, 10, 0.95)",
+              willChange: "transform, opacity",
+            }}
+          >
+            {/* header */}
+            <div
+              className="flex items-center gap-3 px-4 py-2.5 border-b"
+              style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+            >
+              <div className="flex gap-1.5">
+                <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="font-mono text-[11px] text-muted ml-2 px-2 py-0.5 rounded bg-white/5">
+                {group.filename}
+              </div>
+            </div>
+            {/* code body */}
+            <pre
+              className="px-5 py-4 font-mono text-[13px] leading-relaxed overflow-x-auto"
+              style={{ minHeight: "220px" }}
+            >
+              {typedLines.map((line, i) => (
+                <div key={i} style={{ color: lineColor(line) }}>
+                  {line || "\u00A0"}
+                </div>
+              ))}
+              <div style={{ color: lineColor(currentLine) }}>
+                {currentLine}
+                <span style={{ opacity: showCursor ? 1 : 0, color: "#1A6EFF" }}>
+                  |
+                </span>
+              </div>
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {/* Cards grid */}
+      <div
+        ref={cardsRef}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5"
+      >
+        {group.tools.map((t) => (
+          <div key={t.name} style={{ opacity: 0 }} className="contents">
+            <ToolCard tool={t} />
+          </div>
         ))}
       </div>
     </div>
@@ -176,8 +312,8 @@ export function SkillsSection() {
           Stack &amp; <span className="grad-text">Habilidades</span>
         </h2>
 
-        {GROUPS.map((g, i) => (
-          <SkillGroup key={g.title} group={g} groupIndex={i} />
+        {GROUPS.map((g) => (
+          <SkillGroup key={g.title} group={g} />
         ))}
       </div>
     </section>
