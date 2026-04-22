@@ -14,17 +14,17 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Guilherme Aires — NOC Analyst | DevOps | Developer" },
+      { title: "Guilherme Aires — NOC Analyst · DevOps · Developer" },
       {
         name: "description",
         content:
-          "Portfólio de Guilherme Aires — Analista NOC, DevOps e Desenvolvedor. Infraestrutura que não dorme. Código que não falha.",
+          "Portfólio de Guilherme Aires — Analista NOC, DevOps e Desenvolvedor de Software. Infraestrutura sólida. Código que entrega.",
       },
-      { property: "og:title", content: "Guilherme Aires — NOC | DevOps | Dev" },
+      { property: "og:title", content: "Guilherme Aires — NOC · DevOps · Dev" },
       {
         property: "og:description",
         content:
-          "Monitoramento, automação e desenvolvimento full stack. Do terminal à produção.",
+          "NOC, DevOps e desenvolvimento de software. Do monitoramento à produção.",
       },
     ],
   }),

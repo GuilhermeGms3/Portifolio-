@@ -1,12 +1,24 @@
+/**
+ * Atmospheric overlays: subtle film grain + faint vignette.
+ * No scanlines — the new design avoids terminal/CRT aesthetic.
+ */
 export function ScanlineOverlay() {
   return (
     <>
-      {/* Scanlines */}
-      <div className="pointer-events-none fixed inset-0 z-[60] scanlines mix-blend-overlay" />
-      {/* CRT vignette */}
-      <div className="pointer-events-none fixed inset-0 z-[60] crt-vignette" />
-      {/* Moving scanline */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-[61] h-[3px] bg-gradient-to-b from-transparent via-[rgb(0_255_65_/_0.18)] to-transparent animate-scanline-move" />
+      {/* film grain */}
+      <div
+        className="pointer-events-none fixed inset-0 z-[60] noise opacity-[0.04] mix-blend-overlay"
+        aria-hidden
+      />
+      {/* soft vignette */}
+      <div
+        className="pointer-events-none fixed inset-0 z-[60]"
+        aria-hidden
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 60%, rgb(0 0 0 / 0.55) 100%)",
+        }}
+      />
     </>
   );
 }

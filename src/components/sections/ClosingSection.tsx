@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -10,13 +11,21 @@ export function ClosingSection() {
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!canvasRef.current || !stickyRef.current || !sectionRef.current) return;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const NODE_COUNT = isMobile ? 80 : 200;
 
     const canvas = canvasRef.current;
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 5);
+
     const setSize = () => {
       const w = stickyRef.current!.clientWidth;
       const h = stickyRef.current!.clientHeight;
@@ -25,63 +34,74 @@ export function ClosingSection() {
       camera.updateProjectionMatrix();
     };
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0, 5);
-
     const group = new THREE.Group();
     scene.add(group);
 
-    // Globe wireframe
-    const globeGeo = new THREE.SphereGeometry(1.6, 32, 24);
+    // Globe wireframe — blue
+    const globeGeo = new THREE.SphereGeometry(1.6, 36, 26);
     const globeMat = new THREE.MeshBasicMaterial({
-      color: 0x00ff41,
+      color: 0x1a6eff,
       wireframe: true,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.25,
     });
     const globe = new THREE.Mesh(globeGeo, globeMat);
     group.add(globe);
 
-    // Inner solid (very dark, gives mass)
-    const innerGeo = new THREE.SphereGeometry(1.55, 32, 24);
+    // Inner solid mass
+    const innerGeo = new THREE.SphereGeometry(1.55, 36, 26);
     const innerMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.85 });
     group.add(new THREE.Mesh(innerGeo, innerMat));
 
-    // Network nodes (Points) on sphere surface + scattered cloud
-    const NODE_COUNT = 140;
+    // Accent equatorial ring — green
+    const ringGeo = new THREE.TorusGeometry(1.65, 0.005, 8, 64);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff41, transparent: true, opacity: 0.5 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+
+    // Nodes — gradient by Y position (blue top → green bottom)
     const nodePositions = new Float32Array(NODE_COUNT * 3);
-    const targetPositions = new Float32Array(NODE_COUNT * 3); // on sphere
-    const startPositions = new Float32Array(NODE_COUNT * 3); // scattered
+    const targetPositions = new Float32Array(NODE_COUNT * 3);
+    const startPositions = new Float32Array(NODE_COUNT * 3);
+    const colors = new Float32Array(NODE_COUNT * 3);
     for (let i = 0; i < NODE_COUNT; i++) {
-      // sphere surface (slightly above globe)
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1.75;
-      targetPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      targetPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      targetPositions[i * 3 + 2] = r * Math.cos(phi);
-      // start scattered
-      startPositions[i * 3] = (Math.random() - 0.5) * 8;
-      startPositions[i * 3 + 1] = (Math.random() - 0.5) * 8;
-      startPositions[i * 3 + 2] = (Math.random() - 0.5) * 8;
-      // initial = start
+      const r = 1.78;
+      const tx = r * Math.sin(phi) * Math.cos(theta);
+      const ty = r * Math.sin(phi) * Math.sin(theta);
+      const tz = r * Math.cos(phi);
+      targetPositions[i * 3] = tx;
+      targetPositions[i * 3 + 1] = ty;
+      targetPositions[i * 3 + 2] = tz;
+      startPositions[i * 3] = (Math.random() - 0.5) * 10;
+      startPositions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+      startPositions[i * 3 + 2] = (Math.random() - 0.5) * 10;
       nodePositions[i * 3] = startPositions[i * 3];
       nodePositions[i * 3 + 1] = startPositions[i * 3 + 1];
       nodePositions[i * 3 + 2] = startPositions[i * 3 + 2];
+
+      // gradient: y from -1.6 (green) to +1.6 (blue)
+      const t = (ty + 1.6) / 3.2;
+      // mix #1A6EFF (0.1, 0.43, 1) at top with #00FF41 (0, 1, 0.25) at bottom
+      colors[i * 3] = 0.1 * t + 0 * (1 - t);
+      colors[i * 3 + 1] = 0.43 * t + 1 * (1 - t);
+      colors[i * 3 + 2] = 1 * t + 0.25 * (1 - t);
     }
     const nodeGeo = new THREE.BufferGeometry();
     nodeGeo.setAttribute("position", new THREE.BufferAttribute(nodePositions, 3));
+    nodeGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     const nodeMat = new THREE.PointsMaterial({
-      color: 0x00ff41,
-      size: 0.045,
+      size: 0.05,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
+      vertexColors: true,
     });
     const nodes = new THREE.Points(nodeGeo, nodeMat);
     group.add(nodes);
 
-    // Connections — pre-build pairs of close-by nodes
+    // Connections
     const linePairs: Array<[number, number]> = [];
     for (let i = 0; i < NODE_COUNT; i++) {
       for (let j = i + 1; j < NODE_COUNT; j++) {
@@ -96,7 +116,7 @@ export function ClosingSection() {
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
     const lineMat = new THREE.LineBasicMaterial({
-      color: 0x00ff41,
+      color: 0x1a6eff,
       transparent: true,
       opacity: 0,
     });
@@ -106,11 +126,10 @@ export function ClosingSection() {
     setSize();
     window.addEventListener("resize", setSize);
 
-    // Progress driven by ScrollTrigger (0-1)
     const state = { p: 0 };
 
     const updateNodes = () => {
-      const t = Math.min(1, state.p / 0.4); // assemble during phase 1
+      const t = Math.min(1, state.p / 0.2);
       const eased = 1 - Math.pow(1 - t, 3);
       const arr = nodeGeo.attributes.position.array as Float32Array;
       for (let i = 0; i < NODE_COUNT; i++) {
@@ -120,7 +139,6 @@ export function ClosingSection() {
       }
       nodeGeo.attributes.position.needsUpdate = true;
 
-      // Update line endpoints to follow current node positions
       for (let k = 0; k < linePairs.length; k++) {
         const [a, b] = linePairs[k];
         linePositions[k * 6] = arr[a * 3];
@@ -132,12 +150,15 @@ export function ClosingSection() {
       }
       lineGeo.attributes.position.needsUpdate = true;
 
-      // line opacity: phase 2 (0.4 - 0.7)
-      const lp = Math.max(0, Math.min(1, (state.p - 0.4) / 0.3));
-      lineMat.opacity = lp * 0.4;
-      // globe shifts right + camera zooms slightly in phase 3
-      const tp = Math.max(0, Math.min(1, (state.p - 0.6) / 0.3));
-      group.position.x = tp * 1.1;
+      // line opacity phase 2 (0.2 → 0.5)
+      const lp = Math.max(0, Math.min(1, (state.p - 0.2) / 0.3));
+      lineMat.opacity = lp * 0.45;
+      // hue blend toward green as it grows
+      lineMat.color.setRGB(0.1 + lp * 0.05, 0.43 + lp * 0.3, 1 - lp * 0.4);
+
+      // group shifts right phase 3 (0.5 → 0.75)
+      const tp = Math.max(0, Math.min(1, (state.p - 0.5) / 0.25));
+      group.position.x = tp * 1.4;
     };
 
     let raf = 0;
@@ -145,18 +166,17 @@ export function ClosingSection() {
     const animate = () => {
       raf = requestAnimationFrame(animate);
       const dt = clock.getDelta();
-      group.rotation.y += dt * 0.15;
-      group.rotation.x = Math.sin(clock.elapsedTime * 0.2) * 0.1;
-      // gentle pulse on globe wireframe
-      globeMat.opacity = 0.2 + Math.sin(clock.elapsedTime * 1.5) * 0.08;
-      // node random blink
-      nodeMat.opacity = 0.7 + Math.sin(clock.elapsedTime * 2.3) * 0.15;
+      group.rotation.y += dt * 0.18;
+      group.rotation.x = Math.sin(clock.elapsedTime * 0.2) * 0.08;
+      ring.rotation.z += dt * 0.4;
+      globeMat.opacity = 0.18 + Math.sin(clock.elapsedTime * 1.2) * 0.07;
+      // node random shimmer
+      nodeMat.opacity = 0.8 + Math.sin(clock.elapsedTime * 2.4) * 0.15;
       updateNodes();
       renderer.render(scene, camera);
     };
     animate();
 
-    // ScrollTrigger
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: sectionRef.current,
@@ -164,14 +184,18 @@ export function ClosingSection() {
         end: "bottom bottom",
         pin: stickyRef.current,
         pinSpacing: false,
-        scrub: 1,
+        scrub: 2,
         onUpdate: (self) => {
           state.p = self.progress;
-          // Text reveal during phase 3
           if (textRef.current) {
-            const tp = Math.max(0, Math.min(1, (state.p - 0.65) / 0.25));
+            const tp = Math.max(0, Math.min(1, (state.p - 0.55) / 0.2));
             textRef.current.style.opacity = String(tp);
             textRef.current.style.transform = `translateX(${(1 - tp) * -40}px)`;
+          }
+          if (buttonsRef.current) {
+            const bp = Math.max(0, Math.min(1, (state.p - 0.78) / 0.18));
+            buttonsRef.current.style.opacity = String(bp);
+            buttonsRef.current.style.transform = `scale(${0.85 + bp * 0.15})`;
           }
         },
       });
@@ -186,6 +210,8 @@ export function ClosingSection() {
       globeMat.dispose();
       innerGeo.dispose();
       innerMat.dispose();
+      ringGeo.dispose();
+      ringMat.dispose();
       nodeGeo.dispose();
       nodeMat.dispose();
       lineGeo.dispose();
@@ -198,54 +224,63 @@ export function ClosingSection() {
       ref={sectionRef}
       id="closing"
       className="relative"
-      style={{ height: "400vh" }}
+      style={{ height: "400vh", background: "var(--surface-1)" }}
     >
       <div ref={stickyRef} className="h-screen w-full sticky top-0 overflow-hidden">
+        {/* atmospheric gradients */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 70% 50%, rgba(26,110,255,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0,255,65,0.12) 0%, transparent 50%)",
+          }}
+        />
+
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 h-full flex items-center px-6 md:px-16">
-          <div
-            ref={textRef}
-            className="max-w-xl"
-            style={{ opacity: 0 }}
-          >
-            <div className="font-terminal text-sm text-terminal/70 mb-4">
-              guilherme@portfolio:~$
+          <div ref={textRef} className="max-w-xl" style={{ opacity: 0, willChange: "transform, opacity" }}>
+            <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted mb-4 flex items-center gap-3">
+              <span className="inline-block h-px w-8 grad-bg" />
+              fim de linha
             </div>
-            <h2 className="font-display text-4xl md:text-6xl text-terminal-bright glow-text-strong leading-tight mb-3">
-              &gt; Guilherme Aires
+            <h2 className="font-display font-semibold text-5xl md:text-7xl text-white tracking-tight leading-[1.05] mb-4">
+              Guilherme <span className="grad-text">Aires</span>
             </h2>
-            <p className="font-terminal text-base md:text-xl text-terminal mb-2 glow-text">
-              &gt; NOC Analyst | DevOps | Developer
+            <p className="text-lg md:text-xl text-white/85 mb-2">
+              NOC Analyst · DevOps · Developer
             </p>
-            <p className="font-terminal text-sm md:text-base text-terminal/70 mb-8">
-              &gt; Disponível para freelas e oportunidades
+            <p className="text-muted mb-3">São Paulo, Brasil</p>
+            <p className="font-mono text-sm grad-text mb-10">
+              Disponível para freelas e oportunidades
             </p>
-            <div className="flex flex-wrap gap-4">
-              <a
-                href="https://wa.me/55XXXXXXXXXX"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-terminal text-background px-6 py-3 font-terminal hover:bg-terminal/80 transition-colors glow-box"
+
+            <div ref={buttonsRef} className="flex flex-wrap gap-4" style={{ opacity: 0, willChange: "transform, opacity" }}>
+              <motion.a
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                href="#contact"
+                className="inline-flex items-center gap-2 grad-bg text-black px-6 py-3 rounded-md font-display font-medium tracking-tight glow-grad"
               >
-                <span className="opacity-60">$</span>
-                ./hire_me.sh
-              </a>
-              <a
+                Entre em Contato
+                <span aria-hidden>→</span>
+              </motion.a>
+              <motion.a
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
                 href="https://github.com/GuilhermeGms3"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-terminal text-terminal px-6 py-3 font-terminal hover:bg-terminal hover:text-background transition-colors"
+                className="grad-border inline-flex items-center gap-2 px-6 py-3 rounded-md text-white font-display tracking-tight bg-black/30"
               >
-                <span className="opacity-60">$</span>
-                ./view_github.sh
-              </a>
+                Ver GitHub
+              </motion.a>
             </div>
           </div>
         </div>
 
-        <div className="absolute bottom-6 right-8 font-terminal text-xs text-terminal/40">
-          [ network.globe :: rendering @60fps ]
+        <div className="absolute bottom-6 right-8 font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+          network · 60fps
         </div>
       </div>
     </section>
