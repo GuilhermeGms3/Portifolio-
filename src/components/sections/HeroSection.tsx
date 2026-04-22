@@ -111,7 +111,7 @@ export function HeroSection() {
         trigger: sectionRef.current,
         start: "top top",
         end: "bottom top",
-        scrub: 1,
+        scrub: 3,
       };
       gsap.to(gridRef.current, { y: 80, ease: "none", scrollTrigger: trig });
       gsap.to(headlineRef.current, { y: 320, ease: "none", scrollTrigger: trig });

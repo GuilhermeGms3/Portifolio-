@@ -30,7 +30,13 @@ export function AboutSection() {
         end: "bottom bottom",
         pin: stickyRef.current,
         pinSpacing: false,
-        scrub: 2,
+        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 3 : 6,
+        snap: {
+          snapTo: [0, 0.22, 0.48, 0.72, 1],
+          duration: 0.6,
+          ease: "power1.inOut",
+          delay: 0.1,
+        },
         onUpdate: (self) => {
           const p = self.progress;
 
@@ -84,7 +90,7 @@ export function AboutSection() {
       ref={sectionRef}
       id="about"
       className="relative"
-      style={{ height: "450vh", background: "var(--surface-1)" }}
+      style={{ height: "600vh", background: "var(--surface-1)" }}
     >
       <div
         ref={stickyRef}
