@@ -287,9 +287,7 @@ function SkillGroup({ group }: { group: Group }) {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5"
       >
         {group.tools.map((t) => (
-          <div key={t.name} style={{ opacity: 0 }} className="contents">
-            <ToolCard tool={t} />
-          </div>
+          <ToolCard key={t.name} tool={t} />
         ))}
       </div>
     </div>
