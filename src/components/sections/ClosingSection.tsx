@@ -184,7 +184,7 @@ export function ClosingSection() {
         end: "bottom bottom",
         pin: stickyRef.current,
         pinSpacing: false,
-        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 7 : 15,
+        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 7 : 14,
         onUpdate: (self) => {
           state.p = self.progress;
           if (textRef.current) {
@@ -224,7 +224,7 @@ export function ClosingSection() {
       ref={sectionRef}
       id="closing"
       className="relative"
-      style={{ height: "650vh", background: "var(--surface-1)" }}
+      style={{ height: "600vh", background: "#0a0a0a" }}
     >
       <div ref={stickyRef} className="h-screen w-full sticky top-0 overflow-hidden">
         {/* atmospheric gradients */}

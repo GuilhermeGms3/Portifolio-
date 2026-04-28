@@ -153,7 +153,7 @@ export function TimelineSection() {
   useEffect(() => {
     if (!sectionRef.current || !stickyRef.current) return;
     const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
-    const scrubVal = isMobile ? 9 : 18;
+    const scrubVal = isMobile ? 8 : 16;
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
