@@ -145,15 +145,15 @@
   .text-green   { color: #00FF41; }
   .text-muted   { color: #a0aec0; }
 
-  /* Brand gradient text */
+  /* Brand gradient text — blue dominant, teal midpoint, hint of green */
   .grad-text {
-    background-image: linear-gradient(90deg, #1A6EFF 0%, #00FF41 100%);
+    background-image: linear-gradient(90deg, #1A6EFF 0%, #00B4D8 70%, #00FF41 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .grad-text-vertical {
-    background-image: linear-gradient(180deg, #1A6EFF 0%, #00FF41 100%);
+    background-image: linear-gradient(180deg, #1A6EFF 0%, #00B4D8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -161,7 +161,7 @@
 
   /* Brand gradient fill */
   .grad-bg {
-    background-image: linear-gradient(135deg, #1A6EFF 0%, #00FF41 100%);
+    background-image: linear-gradient(90deg, #1A6EFF 0%, #00B4D8 100%);
   }
 
   /* Gradient border using mask compositing */
@@ -175,7 +175,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, #1A6EFF 0%, #00FF41 100%);
+    background: linear-gradient(135deg, #1A6EFF 0%, #00B4D8 100%);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -241,4 +241,23 @@
     50% { transform: translateY(-10px); }
   }
   .float-y { animation: float-y 6s ease-in-out infinite; }
+
+  /* Contact form inputs */
+  .contact-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(26, 110, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: var(--font-body);
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .contact-input::placeholder { color: #6b7280; }
+  .contact-input:focus {
+    border-color: rgba(26, 110, 255, 0.7);
+    box-shadow: 0 0 0 3px rgba(26, 110, 255, 0.15);
+  }
 }
