@@ -3,10 +3,12 @@ import * as THREE from "three";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
+import { useContactModal } from "@/components/contact/ContactModalContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function ClosingSection() {
+  const { openModal } = useContactModal();
   const sectionRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -184,7 +186,7 @@ export function ClosingSection() {
         end: "bottom bottom",
         pin: stickyRef.current,
         pinSpacing: false,
-        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 7 : 15,
+        scrub: typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 7 : 14,
         onUpdate: (self) => {
           state.p = self.progress;
           if (textRef.current) {
@@ -224,7 +226,7 @@ export function ClosingSection() {
       ref={sectionRef}
       id="closing"
       className="relative"
-      style={{ height: "650vh", background: "var(--surface-1)" }}
+      style={{ height: "600vh", background: "#0a0a0a" }}
     >
       <div ref={stickyRef} className="h-screen w-full sticky top-0 overflow-hidden">
         {/* atmospheric gradients */}
@@ -256,15 +258,19 @@ export function ClosingSection() {
             </p>
 
             <div ref={buttonsRef} className="flex flex-wrap gap-4" style={{ opacity: 0, willChange: "transform, opacity" }}>
-              <motion.a
+              <motion.button
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                href="#contact"
-                className="inline-flex items-center gap-2 grad-bg text-black px-6 py-3 rounded-md font-display font-medium tracking-tight glow-grad"
+                onClick={openModal}
+                className="inline-flex items-center gap-2 text-black px-6 py-3 rounded-md font-display font-medium tracking-tight"
+                style={{
+                  background: "linear-gradient(90deg, #1A6EFF 0%, #00B4D8 100%)",
+                  boxShadow: "0 8px 32px rgba(26,110,255,0.35)",
+                }}
               >
                 Entre em Contato
                 <span aria-hidden>→</span>
-              </motion.a>
+              </motion.button>
               <motion.a
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
