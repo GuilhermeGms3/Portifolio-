@@ -14,8 +14,8 @@ export function ContactModalProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const NOOP: Ctx = { open: false, openModal: () => {}, closeModal: () => {} };
+
 export function useContactModal() {
-  const ctx = useContext(ContactModalContext);
-  if (!ctx) throw new Error("useContactModal must be used within ContactModalProvider");
-  return ctx;
+  return useContext(ContactModalContext) ?? NOOP;
 }
