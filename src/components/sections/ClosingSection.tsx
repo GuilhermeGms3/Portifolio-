@@ -140,6 +140,13 @@ export function ClosingSection() {
 
     setSize();
     window.addEventListener("resize", setSize);
+    // Observe sticky container — pin/unpin and layout shifts can change its size without firing window resize
+    const ro = new ResizeObserver(() => setSize());
+    ro.observe(stickyRef.current);
+    // Also re-evaluate on DPR changes (zoom)
+    const dprMql = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const onDpr = () => setSize();
+    dprMql.addEventListener?.("change", onDpr);
 
     const state = { p: 0 };
 
