@@ -21,17 +21,30 @@ export function ClosingSection() {
     const NODE_COUNT = isMobile ? 80 : 200;
 
     const canvas = canvasRef.current;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    // Force a crisp pixel ratio — clamp between 2 and 3 so low-DPR/zoomed displays stay sharp
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    renderer.setPixelRatio(dpr);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.set(0, 0, 5);
 
+    let lastW = 0;
+    let lastH = 0;
     const setSize = () => {
-      const w = stickyRef.current!.clientWidth;
-      const h = stickyRef.current!.clientHeight;
+      if (!stickyRef.current) return;
+      const w = stickyRef.current.clientWidth;
+      const h = stickyRef.current.clientHeight;
+      if (w === 0 || h === 0) return;
+      if (w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+      renderer.setPixelRatio(Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
       renderer.setSize(w, h, false);
+      // Ensure the CSS size matches exactly to avoid stretching from layout rounding
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
@@ -127,6 +140,13 @@ export function ClosingSection() {
 
     setSize();
     window.addEventListener("resize", setSize);
+    // Observe sticky container — pin/unpin and layout shifts can change its size without firing window resize
+    const ro = new ResizeObserver(() => setSize());
+    ro.observe(stickyRef.current);
+    // Also re-evaluate on DPR changes (zoom)
+    const dprMql = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const onDpr = () => setSize();
+    dprMql.addEventListener?.("change", onDpr);
 
     const state = { p: 0 };
 
@@ -167,6 +187,8 @@ export function ClosingSection() {
     const clock = new THREE.Clock();
     const animate = () => {
       raf = requestAnimationFrame(animate);
+      // Defensive: keep canvas dimensions in sync every frame (cheap, no-op if unchanged)
+      setSize();
       const dt = clock.getDelta();
       group.rotation.y += dt * 0.18;
       group.rotation.x = Math.sin(clock.elapsedTime * 0.2) * 0.08;
@@ -206,6 +228,8 @@ export function ClosingSection() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", setSize);
+      ro.disconnect();
+      dprMql.removeEventListener?.("change", onDpr);
       ctx.revert();
       renderer.dispose();
       globeGeo.dispose();
