@@ -282,32 +282,26 @@
   }
   .float-y { animation: float-y 6s ease-in-out infinite; }
 
-  /* Side ambient — dotted matrix grid */
-  .ambient-grid {
+  /* Global continuous dotted matrix — full-page, very subtle */
+  .ambient-grid-global {
     background-image:
-      radial-gradient(rgba(255, 255, 255, 0.085) 1px, transparent 1.4px),
-      radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1.4px);
-    background-size: 22px 22px, 44px 44px;
-    background-position: 0 0, 11px 11px;
+      radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1.4px),
+      radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1.4px);
+    background-size: 26px 26px, 52px 52px;
+    background-position: 0 0, 13px 13px;
+    animation: ambient-grid-drift 90s linear infinite;
   }
 
   @keyframes ambient-grid-drift {
-    from { background-position: 0 0, 11px 11px; }
-    to   { background-position: 0 220px, 11px 231px; }
+    from { background-position: 0 0, 13px 13px; }
+    to   { background-position: 0 260px, 13px 273px; }
   }
 
-  @keyframes ambient-float {
-    0%   { transform: translate3d(0, 0, 0) scale(1);     opacity: 0.85; }
-    50%  { transform: translate3d(12px, -22px, 0) scale(1.06); opacity: 1; }
-    100% { transform: translate3d(-10px, 18px, 0) scale(0.97); opacity: 0.8; }
-  }
-
-  @media (max-width: 1024px) {
-    .ambient-grid { opacity: 0.35 !important; }
+  @media (max-width: 768px) {
+    .ambient-grid-global { opacity: 0.25 !important; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .ambient-grid,
-    .ambient-grid * { animation: none !important; }
+    .ambient-grid-global { animation: none !important; }
   }
 
   /* Contact form inputs — neutral premium */
