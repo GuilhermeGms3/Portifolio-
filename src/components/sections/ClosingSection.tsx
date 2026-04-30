@@ -187,6 +187,8 @@ export function ClosingSection() {
     const clock = new THREE.Clock();
     const animate = () => {
       raf = requestAnimationFrame(animate);
+      // Defensive: keep canvas dimensions in sync every frame (cheap, no-op if unchanged)
+      setSize();
       const dt = clock.getDelta();
       group.rotation.y += dt * 0.18;
       group.rotation.x = Math.sin(clock.elapsedTime * 0.2) * 0.08;
