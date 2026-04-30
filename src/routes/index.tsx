@@ -5,6 +5,7 @@ import { ContactModalProvider } from "@/components/contact/ContactModalContext";
 import { ContactModal } from "@/components/contact/ContactModal";
 import { Navbar } from "@/components/sections/Navbar";
 import { CustomCursor } from "@/components/CustomCursor";
+import { SideAmbient } from "@/components/SideAmbient";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
 import { ProblemsSection } from "@/components/sections/ProblemsSection";
@@ -40,6 +41,7 @@ function Index() {
   return (
     <ContactModalProvider>
       <main className="relative min-h-screen bg-background text-foreground">
+        <SideAmbient />
         <div
           className="pointer-events-none fixed inset-0 z-[60] noise"
           style={{ opacity: 0.035, mixBlendMode: "overlay" }}
