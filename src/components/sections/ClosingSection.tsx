@@ -21,17 +21,30 @@ export function ClosingSection() {
     const NODE_COUNT = isMobile ? 80 : 200;
 
     const canvas = canvasRef.current;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    // Force a crisp pixel ratio — clamp between 2 and 3 so low-DPR/zoomed displays stay sharp
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    renderer.setPixelRatio(dpr);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.set(0, 0, 5);
 
+    let lastW = 0;
+    let lastH = 0;
     const setSize = () => {
-      const w = stickyRef.current!.clientWidth;
-      const h = stickyRef.current!.clientHeight;
+      if (!stickyRef.current) return;
+      const w = stickyRef.current.clientWidth;
+      const h = stickyRef.current.clientHeight;
+      if (w === 0 || h === 0) return;
+      if (w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+      renderer.setPixelRatio(Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
       renderer.setSize(w, h, false);
+      // Ensure the CSS size matches exactly to avoid stretching from layout rounding
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
