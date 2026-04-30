@@ -244,17 +244,17 @@ export function ClosingSection() {
           <div ref={textRef} className="max-w-xl" style={{ opacity: 0, willChange: "transform, opacity" }}>
             <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-muted mb-4 flex items-center gap-3">
               <span className="inline-block h-px w-8 grad-bg" />
-              fim de linha
+              vamos construir
             </div>
             <h2 className="font-display font-semibold text-5xl md:text-7xl text-white tracking-tight leading-[1.05] mb-4">
               Guilherme <span className="grad-text">Aires</span>
             </h2>
             <p className="text-lg md:text-xl text-white/85 mb-2">
-              NOC Analyst · DevOps · Developer
+              Desenvolvimento Web · Automações · Infraestrutura
             </p>
             <p className="text-muted mb-3">São Paulo, Brasil</p>
             <p className="font-mono text-sm grad-text mb-10">
-              Disponível para freelas e oportunidades
+              Disponível para freelas e projetos digitais
             </p>
 
             <div ref={buttonsRef} className="flex flex-wrap gap-4" style={{ opacity: 0, willChange: "transform, opacity" }}>
@@ -268,18 +268,18 @@ export function ClosingSection() {
                   boxShadow: "0 8px 32px rgba(26,110,255,0.35)",
                 }}
               >
-                Entre em Contato
+                Solicitar orçamento
                 <span aria-hidden>→</span>
               </motion.button>
               <motion.a
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                href="https://github.com/GuilhermeGms3"
+                href="https://wa.me/5561991771324"
                 target="_blank"
                 rel="noreferrer"
                 className="grad-border inline-flex items-center gap-2 px-6 py-3 rounded-md text-white font-display tracking-tight bg-black/30"
               >
-                Ver GitHub
+                WhatsApp
               </motion.a>
             </div>
           </div>

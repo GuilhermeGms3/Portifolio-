@@ -6,8 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * "Tech Construtiva" — Mission control meets software engineering.
- * Dark, precise, modern. Blue→green gradient identity.
+ * "Dark Premium / Cinematic Tech Studio"
+ * Deep blacks, metallic accents, dramatic shadows.
+ * Blue is preserved only inside the globe/network closing scene.
  */
 
 @theme inline {
@@ -40,6 +41,11 @@
   --color-green: var(--brand-green);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -49,55 +55,66 @@
 :root {
   --radius: 0.5rem;
 
-  /* Surfaces */
-  --background: oklch(0.13 0 0);              /* #0a0a0a */
-  --surface-1: oklch(0.13 0 0);
-  --surface-2: oklch(0.16 0.02 260);          /* #0d1117-ish */
-  --foreground: oklch(0.98 0 0);              /* #ffffff */
+  /* Dark premium surfaces */
+  --background: oklch(0.10 0 0);              /* #050505 */
+  --surface-1: oklch(0.11 0 0);               /* #0A0A0B */
+  --surface-2: oklch(0.13 0 0);               /* #101012 */
+  --surface-3: oklch(0.15 0 0);               /* #141416 */
+  --surface-4: oklch(0.18 0 0);               /* #1C1C1F */
+  --foreground: oklch(0.97 0 0);              /* #F4F4F5 */
 
-  /* Brand */
-  --brand-blue: oklch(0.62 0.22 258);         /* #1A6EFF */
-  --brand-green: oklch(0.86 0.28 142);        /* #00FF41 */
+  /* Ink scale (text) */
+  --ink:   oklch(0.97 0 0);                   /* #F4F4F5 */
+  --ink-2: oklch(0.74 0 0);                   /* #A1A1AA */
+  --ink-3: oklch(0.55 0 0);                   /* #71717A */
 
-  --card: oklch(0.16 0.005 260);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.16 0.005 260);
-  --popover-foreground: oklch(0.98 0 0);
+  /* Brand — preserved for globe scene only */
+  --brand-blue: oklch(0.62 0.22 258);
+  --brand-green: oklch(0.86 0.28 142);
 
-  --primary: oklch(0.62 0.22 258);
-  --primary-foreground: oklch(0.13 0 0);
-  --secondary: oklch(0.2 0.01 260);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.2 0.01 260);
-  --muted-foreground: oklch(0.72 0.02 250);   /* #a0aec0 */
-  --accent: oklch(0.22 0.04 258);
-  --accent-foreground: oklch(0.98 0 0);
+  /* Accents — used with restraint */
+  --accent-red: oklch(0.42 0.16 25);          /* #7F1D1D */
+  --accent-purple: oklch(0.42 0.20 290);      /* #5B21B6 */
 
-  --destructive: oklch(0.65 0.25 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --card: oklch(0.13 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.13 0 0);
+  --popover-foreground: oklch(0.97 0 0);
 
-  --border: oklch(1 0 0 / 0.08);
-  --input: oklch(1 0 0 / 0.08);
-  --ring: oklch(0.62 0.22 258 / 0.6);
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.10 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.74 0 0);
+  --accent: oklch(0.20 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(0.97 0 0);
+
+  --border: oklch(1 0 0 / 0.10);
+  --input: oklch(1 0 0 / 0.10);
+  --ring: oklch(1 0 0 / 0.30);
 
   --chart-1: oklch(0.62 0.22 258);
   --chart-2: oklch(0.7 0.22 200);
   --chart-3: oklch(0.78 0.25 170);
   --chart-4: oklch(0.86 0.28 142);
   --chart-5: oklch(0.55 0.18 280);
-  --sidebar: oklch(0.13 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.62 0.22 258);
-  --sidebar-primary-foreground: oklch(0.13 0 0);
-  --sidebar-accent: oklch(0.16 0.005 260);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(1 0 0 / 0.08);
-  --sidebar-ring: oklch(0.62 0.22 258 / 0.6);
+  --sidebar: oklch(0.10 0 0);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.97 0 0);
+  --sidebar-primary-foreground: oklch(0.10 0 0);
+  --sidebar-accent: oklch(0.13 0 0);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.10);
+  --sidebar-ring: oklch(1 0 0 / 0.30);
 }
 
 .dark {
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.98 0 0);
+  --background: oklch(0.10 0 0);
+  --foreground: oklch(0.97 0 0);
 }
 
 @layer base {
@@ -119,7 +136,7 @@
   }
 
   ::selection {
-    background-color: rgb(26 110 255 / 0.4);
+    background-color: rgb(244 244 245 / 0.18);
     color: #ffffff;
   }
 
@@ -128,10 +145,10 @@
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--color-background);
+    background: #050505;
   }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #1A6EFF, #00FF41);
+    background: linear-gradient(180deg, #3F3F46, #18181B);
     border-radius: 0;
   }
 }
@@ -141,30 +158,39 @@
   .font-mono    { font-family: var(--font-mono); }
   .font-body    { font-family: var(--font-body); }
 
+  /* Legacy color helpers — kept for the globe section */
   .text-blue    { color: #1A6EFF; }
   .text-green   { color: #00FF41; }
-  .text-muted   { color: #a0aec0; }
 
-  /* Brand gradient text — blue dominant, teal midpoint, hint of green */
+  /* New ink palette */
+  .text-ink     { color: #F4F4F5; }
+  .text-ink-2   { color: #A1A1AA; }
+  .text-ink-3   { color: #71717A; }
+  .text-muted   { color: #A1A1AA; }
+
+  /* Premium metallic gradient text — cool white → silver */
   .grad-text {
-    background-image: linear-gradient(90deg, #1A6EFF 0%, #00B4D8 70%, #00FF41 100%);
+    background-image: linear-gradient(180deg, #FAFAFA 0%, #A1A1AA 60%, #52525B 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .grad-text-vertical {
-    background-image: linear-gradient(180deg, #1A6EFF 0%, #00B4D8 100%);
+    background-image: linear-gradient(180deg, #F4F4F5 0%, #71717A 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  /* Brand gradient fill */
+  /* Legacy brand gradient — preserved for globe section ONLY */
   .grad-bg {
+    background-image: linear-gradient(90deg, #FAFAFA 0%, #52525B 100%);
+  }
+  .grad-bg-brand {
     background-image: linear-gradient(90deg, #1A6EFF 0%, #00B4D8 100%);
   }
 
-  /* Gradient border using mask compositing */
+  /* Premium hairline border via mask compositing */
   .grad-border {
     position: relative;
     background-clip: padding-box;
@@ -175,7 +201,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, #1A6EFF 0%, #00B4D8 100%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.12) 100%);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -187,44 +213,58 @@
     padding: 2px;
   }
 
-  /* Dark glass surface */
+  /* Premium card surface */
+  .card-premium {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(8px);
+  }
+  .card-premium-hover {
+    transition: background 0.4s ease, border-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .card-premium-hover:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+
   .glass {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.035);
     backdrop-filter: blur(8px);
   }
 
-  /* Glow halos */
-  .glow-blue {
-    box-shadow: 0 0 32px rgb(26 110 255 / 0.25), 0 0 80px rgb(26 110 255 / 0.12);
-  }
-  .glow-green {
-    box-shadow: 0 0 32px rgb(0 255 65 / 0.2), 0 0 80px rgb(0 255 65 / 0.08);
-  }
-  .glow-grad {
-    box-shadow:
-      0 0 24px rgb(26 110 255 / 0.25),
-      0 0 48px rgb(0 255 65 / 0.15);
-  }
-  .text-glow-blue {
-    text-shadow: 0 0 18px rgb(26 110 255 / 0.45);
-  }
-  .text-glow-green {
-    text-shadow: 0 0 18px rgb(0 255 65 / 0.4);
+  /* Glows — preserved for globe section */
+  .glow-blue   { box-shadow: 0 0 32px rgb(26 110 255 / 0.25), 0 0 80px rgb(26 110 255 / 0.12); }
+  .glow-green  { box-shadow: 0 0 32px rgb(0 255 65 / 0.20), 0 0 80px rgb(0 255 65 / 0.08); }
+  .glow-grad   { box-shadow: 0 0 24px rgb(26 110 255 / 0.25), 0 0 48px rgb(0 255 65 / 0.15); }
+  .text-glow-blue  { text-shadow: 0 0 18px rgb(26 110 255 / 0.45); }
+  .text-glow-green { text-shadow: 0 0 18px rgb(0 255 65 / 0.40); }
+
+  /* Premium dark glow */
+  .glow-soft {
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
   }
 
   /* Subtle dot grid background */
   .grid-dots {
-    background-image: radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px);
-    background-size: 28px 28px;
+    background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
   .grid-lines {
     background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+      linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
     background-size: 64px 64px;
   }
 
-  /* Film grain overlay (used by NoiseOverlay) */
+  /* Radial vignette — premium dark atmosphere */
+  .vignette {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.6) 0%, transparent 60%);
+  }
+
+  /* Film grain overlay */
   .noise {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     background-size: 160px 160px;
@@ -242,22 +282,22 @@
   }
   .float-y { animation: float-y 6s ease-in-out infinite; }
 
-  /* Contact form inputs */
+  /* Contact form inputs — neutral premium */
   .contact-input {
     width: 100%;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(26, 110, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 8px;
     padding: 12px 16px;
     font-family: var(--font-body);
-    color: #ffffff;
+    color: #F4F4F5;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .contact-input::placeholder { color: #6b7280; }
+  .contact-input::placeholder { color: #71717A; }
   .contact-input:focus {
-    border-color: rgba(26, 110, 255, 0.7);
-    box-shadow: 0 0 0 3px rgba(26, 110, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
   }
 }
