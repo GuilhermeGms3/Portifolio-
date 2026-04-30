@@ -228,6 +228,8 @@ export function ClosingSection() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", setSize);
+      ro.disconnect();
+      dprMql.removeEventListener?.("change", onDpr);
       ctx.revert();
       renderer.dispose();
       globeGeo.dispose();
