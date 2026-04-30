@@ -15,10 +15,12 @@ export function SideAmbient() {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+    const ctxRaw = canvasEl.getContext("2d", { alpha: true });
+    if (!ctxRaw) return;
+    const canvas: HTMLCanvasElement = canvasEl;
+    const ctx: CanvasRenderingContext2D = ctxRaw;
 
     const reduceMotion =
       typeof window !== "undefined" &&
